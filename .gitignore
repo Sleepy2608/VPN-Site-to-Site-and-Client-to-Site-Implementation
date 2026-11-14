@@ -1,7 +1,3 @@
-# ==============================================================================
-# Git Ignore Configuration for VPN Site-to-Site & Client-to-Site Project
-# ==============================================================================
-
 # ------------------------------------------------------------------------------
 # 1. SECURITY, KEYS, CERTIFICATES & SECRETS (CRITICAL - DO NOT COMMIT TO GIT)
 # ------------------------------------------------------------------------------
@@ -20,6 +16,10 @@
 # Easy-RSA generated PKI directory and local vars
 pki/
 **/pki/
+!scripts/pki/
+!scripts/pki/**
+!openvpn/pki/
+!openvpn/pki/vars.example
 vars
 !vars.example
 
@@ -139,3 +139,4 @@ $RECYCLE.BIN/
 # 8. LOCAL PLANNING & WORK IN PROGRESS
 # ------------------------------------------------------------------------------
 .plan/
+.agents/

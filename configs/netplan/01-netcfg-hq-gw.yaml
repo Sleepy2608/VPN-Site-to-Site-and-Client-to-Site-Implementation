@@ -1,0 +1,18 @@
+# Cấu hình Netplan cho VM-HQ-GW (Trụ sở chính)
+# Card eth0: Kết nối vào mạng WAN giả lập (WAN-Net)
+# Card eth1: Kết nối vào mạng LAN trụ sở (HQ-LAN-Net)
+network:
+  version: 2
+  renderer: networkd
+  ethernets:
+    eth0:
+      addresses:
+        - 172.16.1.10/24
+      nameservers:
+        addresses:
+          - 1.1.1.1
+          - 8.8.8.8
+    eth1:
+      addresses:
+        - 192.168.10.1/24
+

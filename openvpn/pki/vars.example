@@ -1,0 +1,31 @@
+# ==============================================================================
+# File: vars.example
+# Mục đích: Tệp biến môi trường cấu hình mẫu cho Easy-RSA 3
+# Vị trí triển khai: ~/openvpn-ca/vars
+# ==============================================================================
+
+# Thông tin thực thể phát hành chứng chỉ (X.509 Distinguished Name)
+set_var EASYRSA_REQ_COUNTRY    "VN"
+set_var EASYRSA_REQ_PROVINCE   "Danang"
+set_var EASYRSA_REQ_CITY       "Danang"
+set_var EASYRSA_REQ_ORG        "CyberSec-VPN-Lab"
+set_var EASYRSA_REQ_EMAIL      "admin@corp.vpn.internal"
+set_var EASYRSA_REQ_OU         "Security-Operations"
+
+# Thuật toán và kích thước khóa mật mã
+set_var EASYRSA_ALGO           rsa
+set_var EASYRSA_KEY_SIZE       2048
+
+# Thời hạn hiệu lực chứng chỉ (ngày)
+# CA Root có hiệu lực 10 năm (3650 ngày)
+set_var EASYRSA_CA_EXPIRE      3650
+
+# Chứng chỉ Server và Client có hiệu lực 825 ngày (~2.25 năm theo chuẩn bảo mật TLS)
+set_var EASYRSA_CERT_EXPIRE    825
+
+# Thời hạn danh sách thu hồi chứng chỉ CRL (ngày)
+set_var EASYRSA_CRL_DAYS       180
+
+# Chế độ tự động xác nhận không hỏi password khi sinh khóa lab (nopass)
+set_var EASYRSA_BATCH          "1"
+
