@@ -1,0 +1,59 @@
+# ==============================================================================
+# Git Attributes Configuration for VPN Site-to-Site & Client-to-Site Project
+# ==============================================================================
+
+# Auto detect text files and perform LF normalization on checkin
+* text=auto
+
+# Linux shell scripts and automation tools (MUST use LF for execution on Ubuntu/Linux)
+*.sh text eol=lf
+*.bash text eol=lf
+*.py text eol=lf
+
+# Windows scripts
+*.bat text eol=crlf
+*.cmd text eol=crlf
+*.ps1 text eol=crlf
+
+# VPN, Network and System Configuration files (Linux services require LF)
+*.conf text eol=lf
+*.ovpn text eol=lf
+*.cnf text eol=lf
+*.secrets text eol=lf
+*.service text eol=lf
+*.rules text eol=lf
+
+# Structured data & Docs
+*.json text
+*.yaml text
+*.yml text
+*.xml text
+*.ini text
+*.md text
+*.txt text
+*.rst text
+*.csv text
+
+# Binary formats (Prevent any line-ending conversions or corruption)
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.pdf binary
+*.drawio text
+*.pcap binary
+*.pcapng binary
+*.cap binary
+*.docx binary
+*.pptx binary
+*.xlsx binary
+*.zip binary
+*.tar.gz binary
+*.tgz binary
+*.iso binary
+*.vdi binary
+*.vmdk binary
+*.ova binary
+*.ovf binary
+

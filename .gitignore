@@ -1,0 +1,141 @@
+# ==============================================================================
+# Git Ignore Configuration for VPN Site-to-Site & Client-to-Site Project
+# ==============================================================================
+
+# ------------------------------------------------------------------------------
+# 1. SECURITY, KEYS, CERTIFICATES & SECRETS (CRITICAL - DO NOT COMMIT TO GIT)
+# ------------------------------------------------------------------------------
+# Private keys & certificates
+*.key
+*.pem
+*.p12
+*.pfx
+*.pkcs12
+*.csr
+*.psk
+*.secret
+*.rnd
+.rnd
+
+# Easy-RSA generated PKI directory and local vars
+pki/
+**/pki/
+vars
+!vars.example
+
+# OpenVPN specific secrets & TLS authentication keys
+ta.key
+secret.key
+
+# strongSwan IPsec secrets
+ipsec.secrets
+**/ipsec.secrets
+
+# Sensitive credentials & environment variables
+*.env
+.env.*
+auth.txt
+password.txt
+passwords.txt
+credentials.txt
+
+# Generated client configs containing private keys/embedded certificates
+# Note: Keep template/example files tracked using .example or template extensions
+openvpn/**/client/*.ovpn
+!openvpn/**/client/*.example.ovpn
+!openvpn/**/client/*.ovpn.example
+!openvpn/**/client/template.ovpn
+
+# ------------------------------------------------------------------------------
+# 2. RUNTIME LOGS, STATUS & PID FILES
+# ------------------------------------------------------------------------------
+*.log
+openvpn-status.log
+ipp.txt
+*.pid
+*.sock
+*.status
+
+# ------------------------------------------------------------------------------
+# 3. PACKET CAPTURES & TRAFFIC DUMPS (WIRESHARK / TCPDUMP)
+# ------------------------------------------------------------------------------
+# Ignore large packet dumps. Allow small sample test pcaps if placed in tests/samples/
+*.pcap
+*.pcapng
+*.cap
+!tests/**/samples/*.pcap
+!tests/**/samples/*.pcapng
+
+# ------------------------------------------------------------------------------
+# 4. VIRTUALIZATION & LAB ARTIFACTS (VIRTUALBOX, VMWARE, GNS3, VAGRANT)
+# ------------------------------------------------------------------------------
+# Oracle VirtualBox
+*.vdi
+*.vbox
+*.vbox-prev
+*.ova
+*.ovf
+
+# VMware Workstation / Player / ESXi
+*.vmdk
+*.vmx
+*.vmsd
+*.vmxf
+*.nvram
+*.vmem
+*.vmsn
+
+# Vagrant
+.vagrant/
+
+# GNS3 & Packet Tracer
+*.gns3project
+*.qcow2
+*.pkt
+
+# ------------------------------------------------------------------------------
+# 5. TEMPORARY DOCUMENTS & OFFICE LOCK FILES
+# ------------------------------------------------------------------------------
+~$*.docx
+~$*.pptx
+~$*.xlsx
+*.tmp
+
+# ------------------------------------------------------------------------------
+# 6. OPERATING SYSTEM ARTIFACTS
+# ------------------------------------------------------------------------------
+# Windows
+Thumbs.db
+ehthumbs.db
+desktop.ini
+[Dd]esktop.ini
+$RECYCLE.BIN/
+
+# macOS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+
+# Linux
+*~
+.directory
+
+# ------------------------------------------------------------------------------
+# 7. IDE & CODE EDITORS
+# ------------------------------------------------------------------------------
+.idea/
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+*.code-workspace
+*.swp
+*.swo
+
+# ------------------------------------------------------------------------------
+# 8. LOCAL PLANNING & WORK IN PROGRESS
+# ------------------------------------------------------------------------------
+.plan/
