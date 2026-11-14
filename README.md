@@ -67,6 +67,13 @@ flowchart LR
 │       └── gateway-branch/
 │           └── s2s-branch.conf # Cấu hình OpenVPN S2S Client trên Branch Gateway (tun0)
 ├── ipsec/                      # Cấu hình strongSwan IKEv2 (ipsec.conf, secrets)
+│   └── strongswan/
+│       ├── gateway-hq/
+│       │   ├── ipsec.conf      # Cấu hình IKEv2 Tunnel phía HQ Gateway (MODP-2048, AES-256-GCM)
+│       │   └── ipsec.secrets.example # Khóa PSK mẫu phía HQ Gateway
+│       └── gateway-branch/
+│           ├── ipsec.conf      # Cấu hình IKEv2 Tunnel phía Branch Gateway
+│           └── ipsec.secrets.example # Khóa PSK mẫu phía Branch Gateway
 ├── scripts/                    # Bộ công cụ Bash Script tự động hóa
 │   ├── common/
 │   │   ├── install-prerequisites.sh # Cài đặt toàn bộ gói phần mềm cho node
@@ -83,7 +90,11 @@ flowchart LR
 │   ├── verify-portal.sh             # Script kiểm tra nghiệm thu HTTP Cổng nội bộ
 │   ├── deploy-s2s-hq.sh             # Script triển khai OpenVPN S2S phía HQ Gateway
 │   ├── deploy-s2s-branch.sh         # Script triển khai OpenVPN S2S phía Branch Gateway
-│   └── verify-s2s.sh                # Script kiểm tra nghiệm thu kết nối LAN-to-LAN S2S
+│   ├── verify-s2s.sh                # Script kiểm tra nghiệm thu kết nối LAN-to-LAN S2S
+│   ├── deploy-ipsec-hq.sh           # Script triển khai strongSwan IPsec phía HQ Gateway
+│   ├── deploy-ipsec-branch.sh       # Script triển khai strongSwan IPsec phía Branch Gateway
+│   ├── verify-ipsec.sh              # Script kiểm tra nghiệm thu kết nối IPsec IKEv2 & SA
+│   └── switch-vpn-mode.sh           # Script chuyển đổi nhanh giữa OpenVPN và strongSwan
 ├── services/                        # Dịch vụ mô phỏng nội bộ (HQ Intranet Portal)
 │   └── intranet-portal/             # Ứng dụng Web Cổng thông tin nội bộ (192.168.10.50)
 │       ├── index.html               # Giao diện chính kèm widget kiểm tra danh tính IP
@@ -134,7 +145,15 @@ flowchart LR
   - [x] Viết bộ script tự động hóa triển khai S2S phía HQ và Branch (`scripts/deploy-s2s-*.sh`)
   - [x] Viết script kiểm tra nghiệm thu tự động LAN-to-LAN và traceroute (`scripts/verify-s2s.sh`)
   - [x] Biên soạn tài liệu kỹ thuật chi tiết Site-to-Site Routed Tunnel (`docs/05-site-to-site-guide.md`)
-- [ ] **Giai đoạn 6: Triển khai mở rộng IPsec IKEv2 bằng strongSwan**
+- [x] **Giai đoạn 6: Triển khai mở rộng IPsec IKEv2 bằng strongSwan**
+  - [x] Soạn thảo cấu hình IKEv2 phía HQ Gateway (`ipsec/strongswan/gateway-hq/ipsec.conf`)
+  - [x] Soạn thảo cấu hình IKEv2 phía Branch Gateway (`ipsec/strongswan/gateway-branch/ipsec.conf`)
+  - [x] Thiết lập khóa bảo mật mẫu Pre-Shared Key (`ipsec.secrets.example`)
+  - [x] Cấu hình tường lửa iptables cho IPsec (UDP 500, UDP 4500, ESP Protocol 50)
+  - [x] Viết script triển khai tự động strongSwan cho 2 Gateway (`scripts/deploy-ipsec-*.sh`)
+  - [x] Viết script chuyển đổi an toàn giữa 2 chế độ VPN (`scripts/switch-vpn-mode.sh`)
+  - [x] Viết script kiểm tra nghiệm thu trạng thái SA và ping LAN-to-LAN (`scripts/verify-ipsec.sh`)
+  - [x] Biên soạn tài liệu kỹ thuật chi tiết so sánh OpenVPN vs IPsec (`docs/06-ipsec-strongswan-guide.md`)
 - [ ] **Giai đoạn 7: Kiểm thử chuyên sâu, Wireshark & Hoàn thiện hồ sơ báo cáo**
 
 ---
