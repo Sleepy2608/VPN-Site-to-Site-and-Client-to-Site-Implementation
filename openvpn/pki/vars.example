@@ -28,3 +28,4 @@ set_var EASYRSA_CRL_DAYS       180
 
 # Chế độ tự động xác nhận không hỏi password khi sinh khóa lab (nopass)
 set_var EASYRSA_BATCH          "1"
+
