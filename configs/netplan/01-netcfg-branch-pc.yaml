@@ -1,0 +1,17 @@
+# Cấu hình Netplan cho VM-Branch-PC (Máy trạm Chi nhánh)
+# Card eth0: Kết nối vào mạng LAN chi nhánh (Branch-LAN-Net)
+network:
+  version: 2
+  renderer: networkd
+  ethernets:
+    eth0:
+      addresses:
+        - 192.168.20.50/24
+      routes:
+        - to: default
+          via: 192.168.20.1
+      nameservers:
+        addresses:
+          - 1.1.1.1
+          - 8.8.8.8
+
