@@ -86,3 +86,4 @@ function renderIdentityStatus(ip) {
         tunnelType.className = 'metric-value mono text-amber';
     }
 }
+

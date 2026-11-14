@@ -23,3 +23,4 @@ tuân thủ an toàn thông tin ISO/IEC 27001 và NIST Cybersecurity Framework.
 Người lập báo cáo: Trưởng ban Tài chính & Giám đốc An ninh thông tin (CISO)
 Ký duyệt điện tử: SHA256-DIGITAL-SIGNATURE-VERIFIED
 ================================================================================
+
