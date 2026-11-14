@@ -138,3 +138,4 @@ else
     echo -e "${RED}[ATTENTION] Một số mục chưa đạt. Vui lòng kiểm tra lại log dịch vụ hoặc chứng chỉ.${NC}"
     exit 1
 fi
+

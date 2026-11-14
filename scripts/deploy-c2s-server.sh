@@ -136,3 +136,4 @@ echo "==========================================================================
 echo " TRIỂN KHAI HOÀN TẤT!"
 echo " File log trạng thái kết nối client: /var/log/openvpn/openvpn-c2s-status.log"
 echo "=============================================================================="
+
