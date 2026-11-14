@@ -89,3 +89,4 @@ else
     echo -e "${RED}[ATTENTION] Chưa đạt yêu cầu. Vui lòng kiểm tra lại dịch vụ Nginx trên HQ Server và VPN tunnel.${NC}"
     exit 1
 fi
+
