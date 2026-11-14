@@ -149,3 +149,4 @@ bash scripts/verify-c2s.sh server
 3. **Lỗi: Kết nối thành công nhưng không ping được mạng LAN HQ**
    - *Nguyên nhân:* Quên chưa bật IP Forwarding hoặc thiếu quy tắc iptables NAT Masquerade.
    - *Khắc phục:* Chạy lại `sudo bash scripts/common/enable-ip-forward.sh` và `sudo bash scripts/common/setup-firewall-rules.sh hq-gw`.
+
