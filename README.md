@@ -5,6 +5,14 @@
 
 ---
 
+## 👥 Thành Viên Tham Gia
+
+1. [Nguyen Le Huy Tam](https://github.com/Sleepy2608)
+2. [Nguyen Sun Sin](https://github.com/ngnsusinn)
+3. [Huynh Dinh Chan](https://github.com/Chan-2006)
+
+---
+
 ## 📌 Tổng Quan Kiến Trúc Mạng
 
 ```mermaid
@@ -44,157 +52,212 @@ flowchart LR
 ```text
 ├── .agents/                    # Quy chuẩn và hướng dẫn hệ thống cho AI Agent
 ├── .plan/                      # Kế hoạch kỹ thuật chi tiết & Hướng dẫn triển khai
-│   ├── PLAN.md                 # Kế hoạch chi tiết 7 giai đoạn (v2.1)
-│   └── huong-dan-trien-khai.md # Cẩm nang thực hành theo từng giai đoạn
-├── configs/                    # Mẫu tệp cấu hình mạng & dịch vụ
-│   └── netplan/                # Cấu hình IP tĩnh Netplan cho 4 máy ảo Ubuntu
-├── docs/                       # Báo cáo kỹ thuật chi tiết
-│   └── 02-network-topology.md  # Bản vẽ sơ đồ mạng, bảng IP & thiết lập mạng ảo
+├── quick-setup.bat             # Công cụ điều khiển và kiểm tra nhanh hệ thống trên Windows
+├── configs/                    # Mẫu tệp cấu hình mạng & dịch vụ Netplan
+│   └── netplan/                # Cấu hình IP tĩnh cho 4 máy ảo Ubuntu
+├── docs/                       # Hồ sơ tài liệu kỹ thuật chi tiết
+│   ├── 01-project-overview.md  # Tổng quan đề tài & Kiến trúc bảo vệ dịch vụ nội bộ
+│   ├── 02-network-topology.md  # Sơ đồ mạng Lab, Bảng IP & Thiết lập mạng ảo
+│   ├── 03-pki-ca-setup.md      # Hạ tầng PKI độc lập Easy-RSA 3 & Quản lý chứng chỉ X.509
+│   ├── 04-client-to-site-guide.md # Hướng dẫn triển khai OpenVPN Client-to-Site
+│   ├── 05-site-to-site-guide.md   # Hướng dẫn triển khai OpenVPN Site-to-Site (CCD & iroute)
+│   ├── 06-ipsec-strongswan-guide.md # Mở rộng Site-to-Site strongSwan IPsec IKEv2
+│   └── 07-testing-and-security-eval.md # Báo cáo kiểm thử toàn diện, Wireshark & Đánh giá an ninh
 ├── openvpn/                    # Cấu hình OpenVPN C2S và S2S (CCD, template)
-│   ├── pki/
-│   │   └── vars.example        # Cấu hình mẫu biến môi trường Easy-RSA 3
-│   ├── client-to-site/
-│   │   ├── server/
-│   │   │   └── server.conf     # Cấu hình OpenVPN C2S Server (UDP 1194, tun0, AES-256-GCM)
-│   │   └── client/
-│   │       ├── client.ovpn.example # Hồ sơ client mẫu (sanitized)
-│   │       └── template.ovpn   # Khuôn mẫu nhúng chứng chỉ tự động
-│   └── site-to-site/
-│       ├── gateway-hq/
-│       │   ├── s2s-hq.conf     # Cấu hình OpenVPN S2S Server trên HQ Gateway (UDP 1195, tun1)
-│       │   └── ccd/
-│       │       └── branch-gw   # Chỉ thị iroute định tuyến mạng LAN Chi nhánh 192.168.20.0/24
-│       └── gateway-branch/
-│           └── s2s-branch.conf # Cấu hình OpenVPN S2S Client trên Branch Gateway (tun0)
+│   ├── pki/                    # Cấu hình biến môi trường Easy-RSA 3 (vars.example)
+│   ├── client-to-site/         # Cấu hình Server C2S (UDP 1194) và Template Client .ovpn
+│   └── site-to-site/           # Cấu hình S2S Gateway HQ, Branch và Client Config Directory
 ├── ipsec/                      # Cấu hình strongSwan IKEv2 (ipsec.conf, secrets)
-│   └── strongswan/
-│       ├── gateway-hq/
-│       │   ├── ipsec.conf      # Cấu hình IKEv2 Tunnel phía HQ Gateway (MODP-2048, AES-256-GCM)
-│       │   └── ipsec.secrets.example # Khóa PSK mẫu phía HQ Gateway
-│       └── gateway-branch/
-│           ├── ipsec.conf      # Cấu hình IKEv2 Tunnel phía Branch Gateway
-│           └── ipsec.secrets.example # Khóa PSK mẫu phía Branch Gateway
+│   └── strongswan/             # Cấu hình kết nối IKEv2 phía HQ và Branch Gateway
 ├── scripts/                    # Bộ công cụ Bash Script tự động hóa
-│   ├── common/
-│   │   ├── install-prerequisites.sh # Cài đặt toàn bộ gói phần mềm cho node
-│   │   ├── enable-ip-forward.sh     # Kích hoạt IP Forwarding vĩnh viễn
-│   │   ├── setup-firewall-rules.sh  # Thiết lập iptables & TCP MSS Clamping
-│   │   └── verify-phase1.sh         # Kiểm tra nghiệm thu tự động Giai đoạn 1
-│   ├── pki/
-│   │   ├── init-ca.sh               # Tự động khởi tạo CA, DH, TLS key & cấp chứng chỉ
-│   │   ├── build-client-ovpn.sh     # Tự động xuất tệp .ovpn nhúng chứng chỉ inline
-│   │   └── distribute-certs.sh      # Phân phối chứng chỉ an toàn cho Server & Branch GW
-│   ├── deploy-c2s-server.sh         # Script triển khai & khởi động OpenVPN C2S Server
-│   ├── verify-c2s.sh                # Script kiểm tra nghiệm thu kết nối Client-to-Site
-│   ├── deploy-hq-portal.sh          # Script cài đặt Nginx & triển khai Cổng nội bộ HQ
-│   ├── verify-portal.sh             # Script kiểm tra nghiệm thu HTTP Cổng nội bộ
-│   ├── deploy-s2s-hq.sh             # Script triển khai OpenVPN S2S phía HQ Gateway
-│   ├── deploy-s2s-branch.sh         # Script triển khai OpenVPN S2S phía Branch Gateway
-│   ├── verify-s2s.sh                # Script kiểm tra nghiệm thu kết nối LAN-to-LAN S2S
-│   ├── deploy-ipsec-hq.sh           # Script triển khai strongSwan IPsec phía HQ Gateway
-│   ├── deploy-ipsec-branch.sh       # Script triển khai strongSwan IPsec phía Branch Gateway
-│   ├── verify-ipsec.sh              # Script kiểm tra nghiệm thu kết nối IPsec IKEv2 & SA
-│   ├── switch-vpn-mode.sh           # Script chuyển đổi nhanh giữa OpenVPN và strongSwan
-│   └── capture-traffic.sh           # Script tự động hóa bắt gói tin tcpdump chuẩn hóa
-├── services/                        # Dịch vụ mô phỏng nội bộ (HQ Intranet Portal)
-│   └── intranet-portal/             # Ứng dụng Web Cổng thông tin nội bộ (192.168.10.50)
-│       ├── index.html               # Giao diện chính kèm widget kiểm tra danh tính IP
-│       ├── css/style.css            # Phong cách giao diện Cyber Security Enterprise
-│       ├── js/app.js                # Xử lý logic hiển thị và phân loại IP nguồn
-│       └── files/                   # Kho tài liệu bảo mật phục vụ đo kiểm Wireshark
-├── tests/                           # Kịch bản kiểm thử, mẫu pcap & phân tích an ninh
-│   ├── test-cases.md                # Ma trận 11 ca kiểm thử chức năng & an ninh
-│   ├── security-tests.md            # Quy trình test thu hồi chứng chỉ (CRL) & tấn công giả lập
-│   └── captures/                    # Hướng dẫn phân tích Wireshark & mẫu pcap
-│       ├── wireshark-analysis.md    # Phân tích chi tiết các trường Header ESP/OpenVPN
-│       └── samples/                 # Thư mục lưu trữ tệp bắt gói tin mẫu (.pcap)
-└── screenshots/                     # 12 ảnh chụp màn hình minh chứng thực nghiệm
+│   ├── deploy-all.sh           # Kịch bản 1-click triển khai tự động toàn bộ từng node
+│   ├── common/                 # Cài đặt phần mềm, bật IP forward và thiết lập iptables
+│   ├── pki/                    # Khởi tạo CA, đóng gói .ovpn inline và phân phối cert
+│   ├── deploy-c2s-server.sh    # Triển khai dịch vụ OpenVPN Client-to-Site Server
+│   ├── deploy-s2s-hq.sh        # Triển khai OpenVPN S2S phía HQ Gateway
+│   ├── deploy-s2s-branch.sh    # Triển khai OpenVPN S2S phía Branch Gateway
+│   ├── deploy-ipsec-hq.sh      # Triển khai strongSwan IPsec phía HQ Gateway
+│   ├── deploy-ipsec-branch.sh  # Triển khai strongSwan IPsec phía Branch Gateway
+│   ├── deploy-hq-portal.sh     # Triển khai Cổng thông tin nội bộ Nginx trên HQ Server
+│   ├── switch-vpn-mode.sh      # Chuyển đổi an toàn giữa OpenVPN và strongSwan
+│   ├── capture-traffic.sh      # Tự động hóa bắt gói tin tcpdump phục vụ Wireshark
+│   └── verify-*.sh             # Các script kiểm tra nghiệm thu tự động từng dịch vụ
+├── services/                   # Dịch vụ mô phỏng nội bộ (HQ Intranet Portal)
+│   └── intranet-portal/        # Web Portal bảo mật cao (HTML, CSS, JS, benchmark files)
+├── tests/                      # Ma trận kiểm thử & phân tích an ninh mạng
+│   ├── test-cases.md           # Ma trận 11 ca kiểm thử chức năng & an ninh
+│   ├── security-tests.md       # Quy trình test thu hồi chứng chỉ (CRL) & tấn công giả lập
+│   └── captures/               # Phân tích gói tin Wireshark & tệp pcap mẫu
+└── screenshots/                # Quy chuẩn và danh mục 12 ảnh chụp màn hình minh chứng
 ```
 
 ---
 
-## 🚀 Tiến Độ Dự Án (7 Giai Đoạn)
+## 📚 Danh Mục Tài Liệu Kỹ Thuật & Kiểm Thử (Documentation & Testing Checklist)
 
-- [x] **Giai đoạn 1: Chuẩn bị máy ảo & Cấu hình mạng Lab tĩnh**
-  - [x] Thiết kế topology và bảng phân bổ địa chỉ IP
-  - [x] Tạo tệp cấu hình Netplan cho các máy ảo (`configs/netplan/`)
-  - [x] Viết script cài đặt gói phần mềm tiên quyết (`scripts/common/install-prerequisites.sh`)
-  - [x] Viết script kích hoạt chuyển tiếp gói kernel (`scripts/common/enable-ip-forward.sh`)
-  - [x] Viết script cấu hình tường lửa và MSS Clamping (`scripts/common/setup-firewall-rules.sh`)
-  - [x] Viết script kiểm tra nghiệm thu tự động Giai đoạn 1 (`scripts/common/verify-phase1.sh`)
-  - [x] Biên soạn tài liệu kiến trúc mạng (`docs/02-network-topology.md`)
-- [x] **Giai đoạn 2: Xây dựng PKI độc lập với Easy-RSA 3**
-  - [x] Tạo file cấu hình mẫu Easy-RSA 3 vars (`openvpn/pki/vars.example`)
-  - [x] Tạo template và hồ sơ mẫu client (.ovpn) nhúng chứng chỉ (`openvpn/client-to-site/client/`)
-  - [x] Viết script tự động hóa khởi tạo CA, DH, TLS-Crypt & cấp chứng chỉ (`scripts/pki/init-ca.sh`)
-  - [x] Viết script tự động đóng gói profile client .ovpn inline (`scripts/pki/build-client-ovpn.sh`)
-  - [x] Viết script phân phối chứng chỉ an toàn sang các node (`scripts/pki/distribute-certs.sh`)
-  - [x] Biên soạn tài liệu kỹ thuật thiết lập PKI, CRL và xác thực OpenSSL (`docs/03-pki-ca-setup.md`)
-- [x] **Giai đoạn 3: Triển khai Client-to-Site OpenVPN Server & Client**
-  - [x] Soạn thảo cấu hình chuẩn `server-c2s.conf` (`openvpn/client-to-site/server/`)
-  - [x] Viết script tự động hóa cài đặt & khởi chạy C2S Server (`scripts/deploy-c2s-server.sh`)
-  - [x] Cấu hình iptables FORWARD, NAT Masquerade và mở cổng UDP 1194
-  - [x] Đóng gói profile client và hướng dẫn kết nối Windows OpenVPN GUI
-  - [x] Viết script kiểm tra nghiệm thu tự động C2S (`scripts/verify-c2s.sh`)
-  - [x] Biên soạn tài liệu kỹ thuật chi tiết Client-to-Site (`docs/04-client-to-site-guide.md`)
-- [x] **Giai đoạn 4: Dựng Web Server nội bộ HQ & Kiểm tra truy cập từ xa**
-  - [x] Thiết kế giao diện Cổng nội bộ chuẩn Cyber Security Enterprise (`services/intranet-portal/`)
-  - [x] Tích hợp widget Network Identity Inspector nhận diện IP dải VPN (`10.8.0.x`)
-  - [x] Xây dựng kho tài liệu bảo mật phục vụ đo kiểm tải file và phân tích Wireshark
-  - [x] Viết script tự động cài đặt Nginx và cấu hình virtual host (`scripts/deploy-hq-portal.sh`)
-  - [x] Viết script tự động kiểm tra nghiệm thu HTTP (`scripts/verify-portal.sh`)
-  - [x] Biên soạn tài liệu tổng quan đề tài và cơ chế bảo vệ dịch vụ nội bộ (`docs/01-project-overview.md`)
-- [x] **Giai đoạn 5: Triển khai Site-to-Site OpenVPN Routed Tunnel (HQ <=> Branch)**
-  - [x] Soạn thảo cấu hình S2S Server trên HQ Gateway (`openvpn/site-to-site/gateway-hq/s2s-hq.conf`)
-  - [x] Thiết lập Client Config Directory (CCD) với chỉ thị `iroute` cho Chi nhánh (`ccd/branch-gw`)
-  - [x] Soạn thảo cấu hình S2S Client trên Branch Gateway (`openvpn/site-to-site/gateway-branch/s2s-branch.conf`)
-  - [x] Cấu hình iptables FORWARD trên cả 2 Gateway và mở cổng UDP 1195
-  - [x] Viết bộ script tự động hóa triển khai S2S phía HQ và Branch (`scripts/deploy-s2s-*.sh`)
-  - [x] Viết script kiểm tra nghiệm thu tự động LAN-to-LAN và traceroute (`scripts/verify-s2s.sh`)
-  - [x] Biên soạn tài liệu kỹ thuật chi tiết Site-to-Site Routed Tunnel (`docs/05-site-to-site-guide.md`)
-- [x] **Giai đoạn 6: Triển khai mở rộng IPsec IKEv2 bằng strongSwan**
-  - [x] Soạn thảo cấu hình IKEv2 phía HQ Gateway (`ipsec/strongswan/gateway-hq/ipsec.conf`)
-  - [x] Soạn thảo cấu hình IKEv2 phía Branch Gateway (`ipsec/strongswan/gateway-branch/ipsec.conf`)
-  - [x] Thiết lập khóa bảo mật mẫu Pre-Shared Key (`ipsec.secrets.example`)
-  - [x] Cấu hình tường lửa iptables cho IPsec (UDP 500, UDP 4500, ESP Protocol 50)
-  - [x] Viết script triển khai tự động strongSwan cho 2 Gateway (`scripts/deploy-ipsec-*.sh`)
-  - [x] Viết script chuyển đổi an toàn giữa 2 chế độ VPN (`scripts/switch-vpn-mode.sh`)
-  - [x] Viết script kiểm tra nghiệm thu trạng thái SA và ping LAN-to-LAN (`scripts/verify-ipsec.sh`)
-  - [x] Biên soạn tài liệu kỹ thuật chi tiết so sánh OpenVPN vs IPsec (`docs/06-ipsec-strongswan-guide.md`)
-- [x] **Giai đoạn 7: Kiểm thử chuyên sâu, Wireshark & Hoàn thiện hồ sơ báo cáo**
-  - [x] Xây dựng ma trận 11 ca kiểm thử chức năng & an ninh (`tests/test-cases.md`)
-  - [x] Xây dựng quy trình kiểm thử an ninh chuyên sâu & tấn công giả lập (`tests/security-tests.md`)
-  - [x] Hướng dẫn bắt gói tin và phân tích mật mã Wireshark đối chứng WAN vs LAN (`tests/captures/wireshark-analysis.md`)
-  - [x] Phát triển kịch bản tự động hóa bắt gói tin tcpdump chuẩn hóa (`scripts/capture-traffic.sh`)
-  - [x] Quy hoạch thư mục tệp bắt gói tin mẫu và hướng dẫn kiểm tra (`tests/captures/samples/`)
-  - [x] Quy hoạch danh mục 12 ảnh chụp màn hình chứng minh thực nghiệm (`screenshots/README.md`)
-  - [x] Biên soạn báo cáo kỹ thuật tổng kết kiểm thử & đánh giá an ninh (`docs/07-testing-and-security-eval.md`)
+Toàn bộ hệ thống tài liệu kỹ thuật, hướng dẫn cài đặt và kịch bản kiểm thử của đồ án được biên soạn đầy đủ và phân loại chi tiết:
+
+### 1. Tài Liệu Kỹ Thuật (Architecture & Guides)
+- [x] [01-project-overview.md](file:///c:/University%20Coding%20Project/VPN-Site-to-Site-and-Client-to-Site-Implementation/docs/01-project-overview.md): Tổng quan bài toán, mục tiêu thiết kế và kiến trúc bảo vệ dịch vụ nội bộ.
+- [x] [02-network-topology.md](file:///c:/University%20Coding%20Project/VPN-Site-to-Site-and-Client-to-Site-Implementation/docs/02-network-topology.md): Bản vẽ sơ đồ mạng, bảng phân bổ địa chỉ IP, thiết kế 3 mạng ảo (WAN, HQ LAN, Branch LAN).
+- [x] [03-pki-ca-setup.md](file:///c:/University%20Coding%20Project/VPN-Site-to-Site-and-Client-to-Site-Implementation/docs/03-pki-ca-setup.md): Hướng dẫn thiết lập CA độc lập với Easy-RSA 3, cơ chế cấp chứng chỉ X.509, Diffie-Hellman và khóa HMAC `ta.key`.
+- [x] [04-client-to-site-guide.md](file:///c:/University%20Coding%20Project/VPN-Site-to-Site-and-Client-to-Site-Implementation/docs/04-client-to-site-guide.md): Cấu hình OpenVPN Client-to-Site Server, cơ chế Split-Tunneling và cấu hình OpenVPN GUI trên Windows.
+- [x] [05-site-to-site-guide.md](file:///c:/University%20Coding%20Project/VPN-Site-to-Site-and-Client-to-Site-Implementation/docs/05-site-to-site-guide.md): Cấu hình OpenVPN Site-to-Site Routed Tunnel kết hợp Client Config Directory (CCD) và chỉ thị `iroute`.
+- [x] [06-ipsec-strongswan-guide.md](file:///c:/University%20Coding%20Project/VPN-Site-to-Site-and-Client-to-Site-Implementation/docs/06-ipsec-strongswan-guide.md): Triển khai mở rộng strongSwan IPsec IKEv2 In-Kernel ESP và so sánh đối chiếu với OpenVPN.
+- [x] [07-testing-and-security-eval.md](file:///c:/University%20Coding%20Project/VPN-Site-to-Site-and-Client-to-Site-Implementation/docs/07-testing-and-security-eval.md): Báo cáo tổng kết kiểm thử toàn diện, đo đạc độ trễ/thông lượng, đánh giá an ninh mô hình STRIDE.
+
+### 2. Kiểm Thử An Ninh & Bắt Gói Tin (Testing & Verification)
+- [x] [tests/test-cases.md](file:///c:/University%20Coding%20Project/VPN-Site-to-Site-and-Client-to-Site-Implementation/tests/test-cases.md): Ma trận 11 ca kiểm thử thực nghiệm (TC-01 đến TC-11) bao gồm kết nối, định tuyến, ứng dụng, phân tích mã hóa và rò rỉ dữ liệu.
+- [x] [tests/security-tests.md](file:///c:/University%20Coding%20Project/VPN-Site-to-Site-and-Client-to-Site-Implementation/tests/security-tests.md): 6 kịch bản kiểm thử bảo mật chuyên sâu: Thu hồi chứng chỉ (CRL), giả mạo PSK, chống rò rỉ (Killswitch), quét Nmap mạng ngoài, chống DoS/Replay.
+- [x] [tests/captures/wireshark-analysis.md](file:///c:/University%20Coding%20Project/VPN-Site-to-Site-and-Client-to-Site-Implementation/tests/captures/wireshark-analysis.md): Bóc tách cấu trúc Header trên Wireshark đối chứng giữa gói tin Cleartext, OpenVPN và IPsec ESP.
+- [x] [tests/captures/samples/](file:///c:/University%20Coding%20Project/VPN-Site-to-Site-and-Client-to-Site-Implementation/tests/captures/samples/): Thư mục lưu trữ tệp `.pcap` mẫu và hướng dẫn xuất/mở bằng Wireshark.
+- [x] [screenshots/](file:///c:/University%20Coding%20Project/VPN-Site-to-Site-and-Client-to-Site-Implementation/screenshots/): Quy hoạch danh mục 12 ảnh chụp màn hình minh chứng phục vụ báo cáo và thuyết minh đồ án.
 
 ---
 
-## ⚡ Hướng Dẫn Nhanh Giai Đoạn 1 (Quickstart Phase 1)
+## 🛠️ Hướng Dẫn Triển Khai Hệ Thống (System Deployment Guide)
 
-1. **Thiết lập 3 mạng ảo (Internal Networks)** trong VirtualBox / VMware:
-   - `WAN-Net` (`172.16.1.0/24`)
-   - `HQ-LAN-Net` (`192.168.10.0/24`)
-   - `Branch-LAN-Net` (`192.168.20.0/24`)
-2. **Cài đặt gói phần mềm** trên máy ảo:
-   ```bash
-   sudo bash scripts/common/install-prerequisites.sh gw   # Cho HQ-GW và Branch-GW
-   sudo bash scripts/common/install-prerequisites.sh server # Cho HQ-Server
-   ```
-3. **Áp dụng IP tĩnh Netplan**:
-   ```bash
-   # Ví dụ trên VM-HQ-GW:
-   sudo cp configs/netplan/01-netcfg-hq-gw.yaml /etc/netplan/01-netcfg.yaml
-   sudo netplan apply
-   ```
-4. **Bật IP Forwarding & Tường lửa trên Gateway**:
-   ```bash
-   sudo bash scripts/common/enable-ip-forward.sh
-   sudo bash scripts/common/setup-firewall-rules.sh hq-gw
-   ```
-5. **Kiểm tra nghiệm thu kết nối**:
-   ```bash
-   bash scripts/common/verify-phase1.sh
-   ```
+Hệ thống hỗ trợ 2 phương pháp triển khai: sử dụng công cụ tự động hóa 1-click (khuyến nghị) hoặc thực hiện tuần tự theo từng node.
+
+### Phương Pháp 1: Triển Khai Nhanh Bằng Công Cụ Tự Động Hóa (Khuyến Nghị)
+
+#### 1. Trên máy khách Windows (Host / Remote PC):
+Chạy tiện ích điều khiển [quick-setup.bat](file:///c:/University%20Coding%20Project/VPN-Site-to-Site-and-Client-to-Site-Implementation/quick-setup.bat):
+```cmd
+quick-setup.bat
+```
+*Tính năng:* Menu tương tác hỗ trợ kiểm tra thông mạng (Ping), mở Web Portal nội bộ, kiểm tra bảng route split-tunnel, chạy traceroute, kết nối SSH nhanh tới các máy ảo, và đo tốc độ tải file bảo mật.
+
+#### 2. Trên các máy ảo Ubuntu Linux (HQ-GW, Branch-GW, HQ-Server, Branch-PC):
+Sử dụng script triển khai tự động toàn diện [scripts/deploy-all.sh](file:///c:/University%20Coding%20Project/VPN-Site-to-Site-and-Client-to-Site-Implementation/scripts/deploy-all.sh):
+```bash
+# Triển khai trọn gói trên HQ Gateway (PKI CA + C2S + S2S OpenVPN + IPsec):
+sudo bash scripts/deploy-all.sh hq-gw
+
+# Triển khai trọn gói trên Branch Gateway (S2S OpenVPN + IPsec):
+sudo bash scripts/deploy-all.sh branch-gw
+
+# Triển khai trọn gói trên HQ Internal Server (Nginx Web Portal + Benchmark files):
+sudo bash scripts/deploy-all.sh hq-server
+
+# Kiểm tra kết nối từ máy trạm Chi nhánh:
+sudo bash scripts/deploy-all.sh branch-pc
+```
+
+---
+
+### Phương Pháp 2: Triển Khai Tuần Tự Theo Từng Node (Manual Deployment)
+
+#### Bước 1: Thiết lập 3 mạng ảo nội bộ trong VirtualBox / VMware
+Tạo 3 mạng ảo (Internal Networks) tương ứng:
+- `WAN-Net` (`172.16.1.0/24`)
+- `HQ-LAN-Net` (`192.168.10.0/24`)
+- `Branch-LAN-Net` (`192.168.20.0/24`)
+
+Gán card mạng cho 5 máy ảo theo bảng quy hoạch tại [02-network-topology.md](file:///c:/University%20Coding%20Project/VPN-Site-to-Site-and-Client-to-Site-Implementation/docs/02-network-topology.md).
+
+#### Bước 2: Cài đặt và cấu hình Gateway Trụ sở chính (`VM-HQ-GW`)
+```bash
+# 1. Cài đặt các gói phần mềm cần thiết:
+sudo bash scripts/common/install-prerequisites.sh gw
+
+# 2. Áp dụng cấu hình IP tĩnh Netplan:
+sudo cp configs/netplan/01-netcfg-hq-gw.yaml /etc/netplan/01-netcfg.yaml
+sudo netplan apply
+
+# 3. Kích hoạt IP Forwarding và Tường lửa iptables:
+sudo bash scripts/common/enable-ip-forward.sh
+sudo bash scripts/common/setup-firewall-rules.sh hq-gw
+
+# 4. Khởi tạo CA và cấp phát chứng chỉ số:
+sudo bash scripts/pki/init-ca.sh
+sudo bash scripts/pki/build-client-ovpn.sh client1
+
+# 5. Khởi chạy OpenVPN Server (Client-to-Site & Site-to-Site):
+sudo bash scripts/deploy-c2s-server.sh
+sudo bash scripts/deploy-s2s-hq.sh
+
+# 6. Cài đặt cấu hình strongSwan IPsec (chế độ mở rộng):
+sudo bash scripts/deploy-ipsec-hq.sh
+```
+
+#### Bước 3: Cài đặt và cấu hình Gateway Chi nhánh (`VM-Branch-GW`)
+```bash
+# 1. Cài đặt các gói phần mềm:
+sudo bash scripts/common/install-prerequisites.sh gw
+
+# 2. Áp dụng IP tĩnh Netplan:
+sudo cp configs/netplan/01-netcfg-branch-gw.yaml /etc/netplan/01-netcfg.yaml
+sudo netplan apply
+
+# 3. Bật IP Forwarding và Tường lửa iptables:
+sudo bash scripts/common/enable-ip-forward.sh
+sudo bash scripts/common/setup-firewall-rules.sh branch-gw
+
+# 4. Triển khai OpenVPN S2S Client:
+sudo bash scripts/deploy-s2s-branch.sh
+
+# 5. Cài đặt strongSwan IPsec phía Branch:
+sudo bash scripts/deploy-ipsec-branch.sh
+```
+
+#### Bước 4: Cài đặt Máy chủ nội bộ HQ (`VM-HQ-Server`)
+```bash
+# 1. Áp dụng IP tĩnh Netplan:
+sudo cp configs/netplan/01-netcfg-hq-server.yaml /etc/netplan/01-netcfg.yaml
+sudo netplan apply
+
+# 2. Triển khai Cổng thông tin nội bộ Nginx:
+sudo bash scripts/deploy-hq-portal.sh
+
+# 3. Kiểm tra trạng thái Web Portal:
+bash scripts/verify-portal.sh
+```
+
+#### Bước 5: Cấu hình và kết nối Máy khách từ xa (`VM-Remote-PC`)
+1. Cài đặt phần mềm **OpenVPN GUI** trên Windows (khuyến nghị phiên bản có Wintun driver).
+2. Sao chép tệp `client1.ovpn` (được tạo ra tại `/home/student/openvpn-ca/client1.ovpn` trên HQ Gateway) vào thư mục cấu hình: `C:\Users\<User>\OpenVPN\config\`.
+3. Nhấp chuột phải vào biểu tượng OpenVPN ở thanh Taskbar -> Chọn **Connect**.
+4. Biểu tượng chuyển sang màu xanh lá cây báo hiệu kết nối thành công (nhận IP `10.8.0.2`).
+5. Mở trình duyệt truy cập `http://192.168.10.50` để kiểm tra Cổng thông tin nội bộ HQ.
+
+---
+
+## 🔍 Kiểm Tra Nghiệm Thu & Chuyển Đổi Chế Độ VPN
+
+### 1. Các lệnh kiểm tra tự động
+```bash
+# Kiểm tra kết nối Client-to-Site (chạy trên HQ GW):
+bash scripts/verify-c2s.sh
+
+# Kiểm tra đường hầm Site-to-Site OpenVPN và ping LAN-to-LAN (chạy trên HQ GW hoặc Branch GW):
+bash scripts/verify-s2s.sh
+
+# Kiểm tra đường hầm strongSwan IPsec IKEv2 (chạy trên HQ GW hoặc Branch GW):
+bash scripts/verify-ipsec.sh
+```
+
+### 2. Chuyển đổi linh hoạt giữa OpenVPN và strongSwan
+Để tránh xung đột định tuyến khi chạy song song cả 2 công nghệ Site-to-Site, sử dụng kịch bản:
+```bash
+# Chuyển sang dùng đường hầm OpenVPN S2S:
+sudo bash scripts/switch-vpn-mode.sh openvpn
+
+# Chuyển sang dùng đường hầm strongSwan IPsec IKEv2:
+sudo bash scripts/switch-vpn-mode.sh ipsec
+```
+
+### 3. Bắt gói tin phân tích mật mã bằng Wireshark
+```bash
+# Bắt gói tin OpenVPN trên card mạng WAN:
+sudo bash scripts/capture-traffic.sh -i eth0 -m openvpn-c2s -c 100
+
+# Bắt gói tin IPsec ESP trên card mạng WAN:
+sudo bash scripts/capture-traffic.sh -i eth0 -m ipsec -c 100
+
+# Bắt gói tin bản rõ đối chứng trên card mạng LAN:
+sudo bash scripts/capture-traffic.sh -i eth1 -m lan-http -c 50
+
+# Kiểm tra chống rò rỉ dữ liệu khi tắt VPN:
+sudo bash scripts/capture-traffic.sh -i eth0 -m leak-check -c 20
+```
