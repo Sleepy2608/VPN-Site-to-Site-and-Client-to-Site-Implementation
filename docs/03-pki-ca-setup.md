@@ -189,3 +189,4 @@ openssl x509 -in ~/openvpn-ca/pki/issued/client1.crt -noout -text | grep -A 2 "K
 openssl verify -CAfile ~/openvpn-ca/pki/ca.crt ~/openvpn-ca/pki/issued/client1.crt
 # Kết quả kỳ vọng: client1.crt: OK
 ```
+
