@@ -87,3 +87,4 @@ sudo bash scripts/deploy-hq-portal.sh
    - Mở trình duyệt Web trên Windows, gõ URL: `http://192.168.10.50`.
    - Quan sát bảng thông số mạng, tải thử tệp `corporate-security-policy-2026.txt`.
    - Ngắt kết nối OpenVPN GUI -> F5 tải lại trang -> Xác nhận mất kết nối hoàn toàn.
+
