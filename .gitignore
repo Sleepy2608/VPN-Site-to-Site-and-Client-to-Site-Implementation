@@ -16,6 +16,10 @@
 # Easy-RSA generated PKI directory and local vars
 pki/
 **/pki/
+!scripts/pki/
+!scripts/pki/**
+!openvpn/pki/
+!openvpn/pki/vars.example
 vars
 !vars.example
 

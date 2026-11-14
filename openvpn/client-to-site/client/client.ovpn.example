@@ -1,0 +1,47 @@
+# ==============================================================================
+# File: client.ovpn.example
+# Mục đích: Hồ sơ kết nối OpenVPN mẫu cho nhân viên từ xa (Remote Worker)
+# Lưu ý: Các khối chứng chỉ và khóa dưới đây là dữ liệu mẫu giả định (sanitized).
+#        Khi triển khai thực tế, hãy dùng script scripts/pki/build-client-ovpn.sh
+# ==============================================================================
+
+client
+dev tun
+proto udp
+remote 172.16.1.10 1194
+resolv-retry infinite
+nobind
+persist-key
+persist-tun
+remote-cert-tls server
+cipher AES-256-GCM
+auth SHA256
+verb 3
+
+<ca>
+-----BEGIN CERTIFICATE-----
+MIIB/zCCAaSgAwIBAgIUEXAMPLE_ROOT_CA_CERTIFICATE_DATA_FOR_LAB_USE
+... (Nội dung chứng chỉ Root CA ca.crt) ...
+-----END CERTIFICATE-----
+</ca>
+
+<cert>
+-----BEGIN CERTIFICATE-----
+MIICBjCCAbSgAwIBAgIUEXAMPLE_CLIENT_CERTIFICATE_DATA_FOR_LAB_USE
+... (Nội dung chứng chỉ máy khách client1.crt) ...
+-----END CERTIFICATE-----
+</cert>
+
+<key>
+-----BEGIN PRIVATE KEY-----
+MIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQEXAMPLE_KEY
+... (Nội dung khóa bí mật mẫu - TUYỆT ĐỐI KHÔNG COMMIT KHÓA THẬT) ...
+-----END PRIVATE KEY-----
+</key>
+
+<tls-crypt>
+-----BEGIN OpenVPN Static key V1-----
+example0123456789abcdef0123456789abcdef0123456789abcdef0123456789
+... (Nội dung khóa bảo vệ kênh điều khiển ta.key mẫu) ...
+-----END OpenVPN Static key V1-----
+</tls-crypt>
