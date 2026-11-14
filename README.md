@@ -53,12 +53,19 @@ flowchart LR
 ├── openvpn/                    # Cấu hình OpenVPN C2S và S2S (CCD, template)
 │   ├── pki/
 │   │   └── vars.example        # Cấu hình mẫu biến môi trường Easy-RSA 3
-│   └── client-to-site/
-│       ├── server/
-│       │   └── server.conf     # Cấu hình OpenVPN C2S Server (UDP 1194, tun0, AES-256-GCM)
-│       └── client/
-│           ├── client.ovpn.example # Hồ sơ client mẫu (sanitized)
-│           └── template.ovpn   # Khuôn mẫu nhúng chứng chỉ tự động
+│   ├── client-to-site/
+│   │   ├── server/
+│   │   │   └── server.conf     # Cấu hình OpenVPN C2S Server (UDP 1194, tun0, AES-256-GCM)
+│   │   └── client/
+│   │       ├── client.ovpn.example # Hồ sơ client mẫu (sanitized)
+│   │       └── template.ovpn   # Khuôn mẫu nhúng chứng chỉ tự động
+│   └── site-to-site/
+│       ├── gateway-hq/
+│       │   ├── s2s-hq.conf     # Cấu hình OpenVPN S2S Server trên HQ Gateway (UDP 1195, tun1)
+│       │   └── ccd/
+│       │       └── branch-gw   # Chỉ thị iroute định tuyến mạng LAN Chi nhánh 192.168.20.0/24
+│       └── gateway-branch/
+│           └── s2s-branch.conf # Cấu hình OpenVPN S2S Client trên Branch Gateway (tun0)
 ├── ipsec/                      # Cấu hình strongSwan IKEv2 (ipsec.conf, secrets)
 ├── scripts/                    # Bộ công cụ Bash Script tự động hóa
 │   ├── common/
@@ -73,7 +80,10 @@ flowchart LR
 │   ├── deploy-c2s-server.sh         # Script triển khai & khởi động OpenVPN C2S Server
 │   ├── verify-c2s.sh                # Script kiểm tra nghiệm thu kết nối Client-to-Site
 │   ├── deploy-hq-portal.sh          # Script cài đặt Nginx & triển khai Cổng nội bộ HQ
-│   └── verify-portal.sh             # Script kiểm tra nghiệm thu HTTP Cổng nội bộ
+│   ├── verify-portal.sh             # Script kiểm tra nghiệm thu HTTP Cổng nội bộ
+│   ├── deploy-s2s-hq.sh             # Script triển khai OpenVPN S2S phía HQ Gateway
+│   ├── deploy-s2s-branch.sh         # Script triển khai OpenVPN S2S phía Branch Gateway
+│   └── verify-s2s.sh                # Script kiểm tra nghiệm thu kết nối LAN-to-LAN S2S
 ├── services/                        # Dịch vụ mô phỏng nội bộ (HQ Intranet Portal)
 │   └── intranet-portal/             # Ứng dụng Web Cổng thông tin nội bộ (192.168.10.50)
 │       ├── index.html               # Giao diện chính kèm widget kiểm tra danh tính IP
@@ -116,7 +126,14 @@ flowchart LR
   - [x] Viết script tự động cài đặt Nginx và cấu hình virtual host (`scripts/deploy-hq-portal.sh`)
   - [x] Viết script tự động kiểm tra nghiệm thu HTTP (`scripts/verify-portal.sh`)
   - [x] Biên soạn tài liệu tổng quan đề tài và cơ chế bảo vệ dịch vụ nội bộ (`docs/01-project-overview.md`)
-- [ ] **Giai đoạn 5: Triển khai Site-to-Site OpenVPN Routed Tunnel (HQ <=> Branch)**
+- [x] **Giai đoạn 5: Triển khai Site-to-Site OpenVPN Routed Tunnel (HQ <=> Branch)**
+  - [x] Soạn thảo cấu hình S2S Server trên HQ Gateway (`openvpn/site-to-site/gateway-hq/s2s-hq.conf`)
+  - [x] Thiết lập Client Config Directory (CCD) với chỉ thị `iroute` cho Chi nhánh (`ccd/branch-gw`)
+  - [x] Soạn thảo cấu hình S2S Client trên Branch Gateway (`openvpn/site-to-site/gateway-branch/s2s-branch.conf`)
+  - [x] Cấu hình iptables FORWARD trên cả 2 Gateway và mở cổng UDP 1195
+  - [x] Viết bộ script tự động hóa triển khai S2S phía HQ và Branch (`scripts/deploy-s2s-*.sh`)
+  - [x] Viết script kiểm tra nghiệm thu tự động LAN-to-LAN và traceroute (`scripts/verify-s2s.sh`)
+  - [x] Biên soạn tài liệu kỹ thuật chi tiết Site-to-Site Routed Tunnel (`docs/05-site-to-site-guide.md`)
 - [ ] **Giai đoạn 6: Triển khai mở rộng IPsec IKEv2 bằng strongSwan**
 - [ ] **Giai đoạn 7: Kiểm thử chuyên sâu, Wireshark & Hoàn thiện hồ sơ báo cáo**
 
