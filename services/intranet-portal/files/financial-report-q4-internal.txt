@@ -1,0 +1,25 @@
+================================================================================
+INTERNAL FINANCIAL AUDIT REPORT - STRICTLY CONFIDENTIAL
+BÁO CÁO KIỂM TOÁN TÀI CHÍNH NỘI BỘ QUÝ 4 / NĂM TÀI CHÍNH 2026
+MÃ TÀI LIỆU: FIN-AUDIT-2026-Q4-RESTRICTED
+LƯU Ý: TÀI LIỆU TUYỆT MẬT NỘI BỘ - CHỈ LƯU HÀNH QUA MẠNG RIÊNG ẢO BẢO MẬT
+================================================================================
+
+I. TỔNG QUAN TÀI CHÍNH DOANH NGHIỆP
+1. Doanh thu hợp nhất Quý 4: 125,450,000,000 VNĐ (Tăng trưởng 18.5% YoY)
+2. Chi phí đầu tư hạ tầng An ninh mạng & Trung tâm dữ liệu: 14,800,000,000 VNĐ
+3. Lợi nhuận trước thuế: 38,200,000,000 VNĐ
+
+II. PHÂN BỔ NGÂN SÁCH NÂNG CẤP HẠ TẦNG AN NINH THÔNG TIN (CYBER DEFENSE)
++ Hệ thống Gateway tường lửa & VPN Concentrator: 4,500,000,000 VNĐ
++ Thiết bị định tuyến chuyển mạch lõi Core Router: 3,200,000,000 VNĐ
++ Hệ thống chứng thực khóa công khai PKI & HSM: 2,100,000,000 VNĐ
++ Dịch vụ kiểm thử xâm nhập (Penetration Testing) & SOC 24/7: 5,000,000,000 VNĐ
+
+III. KẾT LUẬN KIỂM TOÁN
+Hạ tầng mạng VPN Site-to-Site và Client-to-Site đã đáp ứng đầy đủ các tiêu chuẩn
+tuân thủ an toàn thông tin ISO/IEC 27001 và NIST Cybersecurity Framework.
+
+Người lập báo cáo: Trưởng ban Tài chính & Giám đốc An ninh thông tin (CISO)
+Ký duyệt điện tử: SHA256-DIGITAL-SIGNATURE-VERIFIED
+================================================================================
