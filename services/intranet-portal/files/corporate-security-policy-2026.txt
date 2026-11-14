@@ -1,0 +1,35 @@
+================================================================================
+CORPORATE INFORMATION SECURITY POLICY - CONFIDENTIAL
+MÃ TÀI LIỆU: SEC-POL-2026-V1.0
+CƠ QUAN QUẢN LÝ: TRUNG TÂM AN NINH MẠNG DOANH NGHIỆP (SOC/NOC)
+PHẠM VI ÁP DỤNG: TOÀN BỘ CÁN BỘ NHÂN VIÊN TRỤ SỞ VÀ VĂN PHÒNG CHI NHÁNH
+================================================================================
+
+1. MỤC TIÊU & NGUYÊN TẮC BẢO MẬT
+- Mọi tài nguyên nội bộ thuộc dải mạng 192.168.10.0/24 (HQ Internal LAN) chỉ được
+  phép truy cập từ bên trong mạng trụ sở hoặc thông qua các kênh truyền được mã hóa
+  an toàn bằng giao thức OpenVPN / IPsec IKEv2.
+- Nghiêm cấm mở cổng trực tiếp (Port Forwarding) các dịch vụ cơ sở dữ liệu và Web
+  nội bộ ra ngoài không gian địa chỉ Internet/WAN công cộng (172.16.1.0/24).
+
+2. QUY CHUẨN XÁC THỰC MẠNG RIÊNG ẢO (VPN STANDARDS)
+- Bắt buộc xác thực đa tầng dựa trên cơ sở hạ tầng khóa công khai PKI (X.509):
+  + Máy chủ: hq-c2s-server.crt (Key Usage: Server Authentication)
+  + Máy khách: client1.crt (Key Usage: Client Authentication)
+- Sử dụng thuật toán mã hóa đối xứng AES-256-GCM kết hợp hàm băm toàn vẹn SHA-256.
+- Sử dụng tham số Diffie-Hellman 2048-bit để bảo đảm tính bí mật chuyển tiếp hoàn hảo
+  (Perfect Forward Secrecy - PFS).
+- Khóa bảo vệ kênh điều khiển TLS-Crypt (ta.key) phải được lưu trữ với phân quyền
+  nghiêm ngặt (chmod 600).
+
+3. CHÍNH SÁCH THU HỒI CHỨNG CHỈ (CERTIFICATE REVOCATION LIST)
+- Trong trường hợp thiết bị người dùng bị mất cắp hoặc nghi ngờ lộ khóa riêng tư:
+  + Quản trị viên hệ thống có trách nhiệm thu hồi chứng chỉ ngay lập tức qua lệnh:
+    ./easyrsa revoke <client_name>
+  + Xuất lại danh sách thu hồi CRL (crl.pem) và đồng bộ vào máy chủ OpenVPN Server.
+  + Toàn bộ nỗ lực kết nối từ chứng chỉ bị thu hồi sẽ bị máy chủ Gateway từ chối.
+
+================================================================================
+BẢN QUYỀN THUỘC VỀ DOANH NGHIỆP & ĐỒ ÁN AN NINH MẠNG 2026
+================================================================================
+

@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HQ Secure Intranet Portal | CyberSec Enterprise</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <!-- Top Security Header Bar -->
+    <header class="top-nav">
+        <div class="nav-container">
+            <div class="brand">
+                <div class="brand-shield">
+                    <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                        <path d="M9 12l2 2 4-4"/>
+                    </svg>
+                </div>
+                <div class="brand-text">
+                    <span class="brand-title">CORPORATE SECURE INTRANET</span>
+                    <span class="brand-sub">HQ SITE &bull; 192.168.10.0/24 INTERNAL DOMAIN</span>
+                </div>
+            </div>
+            <div class="system-status">
+                <span class="status-indicator-dot"></span>
+                <span class="status-text mono">GATEWAY LINK: <strong class="text-emerald">ACTIVE</strong></span>
+            </div>
+        </div>
+    </header>
+
+    <main class="main-content">
+        <!-- Network Identity Inspector Banner -->
+        <section class="identity-banner-card" id="identityCard">
+            <div class="identity-header">
+                <div class="shield-badge" id="shieldBadge">
+                    <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                        <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                    </svg>
+                </div>
+                <div class="identity-info">
+                    <span class="section-tag mono">NETWORK IDENTITY INSPECTOR</span>
+                    <h1 class="identity-status" id="identityStatus">Đang phân tích địa chỉ IP truy cập...</h1>
+                    <p class="identity-desc" id="identityDesc">Hệ thống đang kiểm tra đường truyền và xác minh nguồn gói tin kết nối vào máy chủ HQ.</p>
+                </div>
+            </div>
+
+            <div class="identity-metrics-grid">
+                <div class="metric-item">
+                    <span class="metric-label">ĐỊA CHỈ IP NGUỒN (CLIENT IP)</span>
+                    <span class="metric-value mono text-cyan" id="clientIpDisplay">10.8.0.2</span>
+                </div>
+                <div class="metric-item">
+                    <span class="metric-label">GIAO TIẾP MẠNG ĐÍCH</span>
+                    <span class="metric-value mono">192.168.10.50:80</span>
+                </div>
+                <div class="metric-item">
+                    <span class="metric-label">TRẠNG THÁI MÃ HÓA WAN</span>
+                    <span class="metric-value mono text-emerald" id="cryptoState">AES-256-GCM / SHA256</span>
+                </div>
+                <div class="metric-item">
+                    <span class="metric-label">LOẠI ĐƯỜNG TRUYỀN</span>
+                    <span class="metric-value mono text-cyan" id="tunnelType">OpenVPN Remote Access (C2S)</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- Quick Telemetry & Lab Info -->
+        <div class="dashboard-grid">
+            <!-- Node Telemetry Card -->
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">
+                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="2" y="2" width="20" height="8" rx="2" ry="2"></rect>
+                            <rect x="2" y="14" width="20" height="8" rx="2" ry="2"></rect>
+                            <line x1="6" y1="6" x2="6.01" y2="6"></line>
+                            <line x1="6" y1="18" x2="6.01" y2="18"></line>
+                        </svg>
+                        Thông Số Kỹ Thuật Node Trụ Sở (HQ Server)
+                    </h2>
+                </div>
+                <div class="card-body">
+                    <ul class="telemetry-list">
+                        <li>
+                            <span class="term">Tên máy chủ ảo:</span>
+                            <span class="value mono">VM-HQ-Server (Ubuntu 22.04 LTS)</span>
+                        </li>
+                        <li>
+                            <span class="term">Địa chỉ IP nội bộ:</span>
+                            <span class="value mono text-cyan">192.168.10.50/24</span>
+                        </li>
+                        <li>
+                            <span class="term">Default Gateway:</span>
+                            <span class="value mono">192.168.10.1 (VM-HQ-GW)</span>
+                        </li>
+                        <li>
+                            <span class="term">Dịch vụ Web:</span>
+                            <span class="value mono">Nginx Engine / HTTP 1.1</span>
+                        </li>
+                        <li>
+                            <span class="term">Phân vùng bảo vệ:</span>
+                            <span class="value badge-secure mono">HQ-LAN-Net (Internal Isolated)</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- VPN Architecture Summary Card -->
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">
+                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"></path>
+                            <path d="M2 12h20"></path>
+                        </svg>
+                        Đường Hầm Bảo Mật Đang Hoạt Động
+                    </h2>
+                </div>
+                <div class="card-body">
+                    <div class="tunnel-item">
+                        <div class="tunnel-top">
+                            <span class="tunnel-name mono">TUNNEL 1: CLIENT-TO-SITE</span>
+                            <span class="badge badge-active mono">ONLINE</span>
+                        </div>
+                        <p class="tunnel-desc">Đường hầm truy cập từ xa cho nhân viên lưu động (Remote Workers). Cấp phát IP dải <code class="mono">10.8.0.0/24</code> qua cổng UDP 1194.</p>
+                    </div>
+
+                    <div class="tunnel-item">
+                        <div class="tunnel-top">
+                            <span class="tunnel-name mono">TUNNEL 2: SITE-TO-SITE</span>
+                            <span class="badge badge-ready mono">ROUTED</span>
+                        </div>
+                        <p class="tunnel-desc">Liên kết hai chi nhánh HQ (<code class="mono">192.168.10.0/24</code>) và Branch Office (<code class="mono">192.168.20.0/24</code>) qua Gateway định tuyến.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Confidential Documents Benchmark Section -->
+        <section class="card documents-section">
+            <div class="card-header">
+                <div>
+                    <h2 class="card-title">
+                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                            <polyline points="14 2 14 8 20 8"></polyline>
+                            <line x1="16" y1="13" x2="8" y2="13"></line>
+                            <line x1="16" y1="17" x2="8" y2="17"></line>
+                            <polyline points="10 9 9 9 8 9"></polyline>
+                        </svg>
+                        Thư Viện Tài Liệu Bảo Mật Nội Bộ (Wireshark Download Benchmark)
+                    </h2>
+                    <p class="card-subtitle">Sử dụng các tệp tin này để kiểm thử quá trình tải dữ liệu thông qua đường hầm VPN và kiểm chứng gói tin mã hóa bằng Wireshark.</p>
+                </div>
+            </div>
+
+            <div class="documents-table-wrapper">
+                <table class="documents-table">
+                    <thead>
+                        <tr>
+                            <th>Tên tài liệu</th>
+                            <th>Mức độ bảo mật</th>
+                            <th>Dung lượng</th>
+                            <th>Định dạng</th>
+                            <th>Hành động</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td class="doc-title-cell">
+                                <span class="doc-icon">📄</span>
+                                <div>
+                                    <span class="doc-name mono">corporate-security-policy-2026.txt</span>
+                                    <span class="doc-meta">Chính sách bảo mật hệ thống thông tin nội bộ</span>
+                                </div>
+                            </td>
+                            <td><span class="badge badge-confidential mono">CONFIDENTIAL</span></td>
+                            <td class="mono">12.4 KB</td>
+                            <td class="mono">TEXT / ASCII</td>
+                            <td><a href="files/corporate-security-policy-2026.txt" download class="btn-download mono">Tải về (.txt)</a></td>
+                        </tr>
+                        <tr>
+                            <td class="doc-title-cell">
+                                <span class="doc-icon">📊</span>
+                                <div>
+                                    <span class="doc-name mono">financial-report-q4-internal.txt</span>
+                                    <span class="doc-meta">Báo cáo kiểm toán tài chính nội bộ Q4</span>
+                                </div>
+                            </td>
+                            <td><span class="badge badge-restricted mono">RESTRICTED</span></td>
+                            <td class="mono">34.8 KB</td>
+                            <td class="mono">TEXT / TABULAR</td>
+                            <td><a href="files/financial-report-q4-internal.txt" download class="btn-download mono">Tải về (.txt)</a></td>
+                        </tr>
+                        <tr>
+                            <td class="doc-title-cell">
+                                <span class="doc-icon">📦</span>
+                                <div>
+                                    <span class="doc-name mono">benchmark-payload-1mb.dat</span>
+                                    <span class="doc-meta">Tệp dữ liệu nhị phân ngẫu nhiên đo kiểm thông lượng & MSS Clamping</span>
+                                </div>
+                            </td>
+                            <td><span class="badge badge-test mono">BENCHMARK</span></td>
+                            <td class="mono">1.0 MB</td>
+                            <td class="mono">BINARY / DATA</td>
+                            <td><a href="files/benchmark-payload-1mb.dat" download class="btn-download mono">Tải về (.dat)</a></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </main>
+
+    <footer class="footer">
+        <div class="footer-container mono">
+            <span>ĐỒ ÁN AN NINH MẠNG &bull; THIẾT LẬP MẠNG RIÊNG ẢO VPN SITE-TO-SITE VÀ CLIENT-TO-SITE</span>
+            <span>SECURED BY OPENVPN & IPSEC INFRASTRUCTURE</span>
+        </div>
+    </footer>
+
+    <script src="js/app.js"></script>
+</body>
+</html>
+
