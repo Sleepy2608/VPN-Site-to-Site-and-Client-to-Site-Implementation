@@ -94,14 +94,21 @@ flowchart LR
 │   ├── deploy-ipsec-hq.sh           # Script triển khai strongSwan IPsec phía HQ Gateway
 │   ├── deploy-ipsec-branch.sh       # Script triển khai strongSwan IPsec phía Branch Gateway
 │   ├── verify-ipsec.sh              # Script kiểm tra nghiệm thu kết nối IPsec IKEv2 & SA
-│   └── switch-vpn-mode.sh           # Script chuyển đổi nhanh giữa OpenVPN và strongSwan
+│   ├── switch-vpn-mode.sh           # Script chuyển đổi nhanh giữa OpenVPN và strongSwan
+│   └── capture-traffic.sh           # Script tự động hóa bắt gói tin tcpdump chuẩn hóa
 ├── services/                        # Dịch vụ mô phỏng nội bộ (HQ Intranet Portal)
 │   └── intranet-portal/             # Ứng dụng Web Cổng thông tin nội bộ (192.168.10.50)
 │       ├── index.html               # Giao diện chính kèm widget kiểm tra danh tính IP
 │       ├── css/style.css            # Phong cách giao diện Cyber Security Enterprise
 │       ├── js/app.js                # Xử lý logic hiển thị và phân loại IP nguồn
 │       └── files/                   # Kho tài liệu bảo mật phục vụ đo kiểm Wireshark
-└── tests/                           # Ma trận kiểm thử, mẫu pcap & phân tích an ninh
+├── tests/                           # Kịch bản kiểm thử, mẫu pcap & phân tích an ninh
+│   ├── test-cases.md                # Ma trận 11 ca kiểm thử chức năng & an ninh
+│   ├── security-tests.md            # Quy trình test thu hồi chứng chỉ (CRL) & tấn công giả lập
+│   └── captures/                    # Hướng dẫn phân tích Wireshark & mẫu pcap
+│       ├── wireshark-analysis.md    # Phân tích chi tiết các trường Header ESP/OpenVPN
+│       └── samples/                 # Thư mục lưu trữ tệp bắt gói tin mẫu (.pcap)
+└── screenshots/                     # 12 ảnh chụp màn hình minh chứng thực nghiệm
 ```
 
 ---
@@ -154,7 +161,14 @@ flowchart LR
   - [x] Viết script chuyển đổi an toàn giữa 2 chế độ VPN (`scripts/switch-vpn-mode.sh`)
   - [x] Viết script kiểm tra nghiệm thu trạng thái SA và ping LAN-to-LAN (`scripts/verify-ipsec.sh`)
   - [x] Biên soạn tài liệu kỹ thuật chi tiết so sánh OpenVPN vs IPsec (`docs/06-ipsec-strongswan-guide.md`)
-- [ ] **Giai đoạn 7: Kiểm thử chuyên sâu, Wireshark & Hoàn thiện hồ sơ báo cáo**
+- [x] **Giai đoạn 7: Kiểm thử chuyên sâu, Wireshark & Hoàn thiện hồ sơ báo cáo**
+  - [x] Xây dựng ma trận 11 ca kiểm thử chức năng & an ninh (`tests/test-cases.md`)
+  - [x] Xây dựng quy trình kiểm thử an ninh chuyên sâu & tấn công giả lập (`tests/security-tests.md`)
+  - [x] Hướng dẫn bắt gói tin và phân tích mật mã Wireshark đối chứng WAN vs LAN (`tests/captures/wireshark-analysis.md`)
+  - [x] Phát triển kịch bản tự động hóa bắt gói tin tcpdump chuẩn hóa (`scripts/capture-traffic.sh`)
+  - [x] Quy hoạch thư mục tệp bắt gói tin mẫu và hướng dẫn kiểm tra (`tests/captures/samples/`)
+  - [x] Quy hoạch danh mục 12 ảnh chụp màn hình chứng minh thực nghiệm (`screenshots/README.md`)
+  - [x] Biên soạn báo cáo kỹ thuật tổng kết kiểm thử & đánh giá an ninh (`docs/07-testing-and-security-eval.md`)
 
 ---
 
