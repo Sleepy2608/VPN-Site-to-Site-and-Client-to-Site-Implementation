@@ -90,3 +90,4 @@ echo "Hướng dẫn tiếp theo:"
 echo "1. Chuyển tệp '${OUTPUT_FILE}' sang máy người dùng từ xa (VM-Remote-PC)."
 echo "2. Mở ứng dụng OpenVPN GUI trên Windows -> Chọn 'Import file...'."
 echo "3. Nhấn 'Connect' để kích hoạt đường hầm bảo mật."
+

@@ -138,3 +138,4 @@ echo " [SUCCESS] HẠ TẦNG PKI ĐÃ ĐƯỢC THIẾT LẬP HOÀN TẤT!"
 echo " Danh mục chứng chỉ sẵn sàng tại: ${CA_DIR}/pki/issued/"
 ls -la "${CA_DIR}/pki/issued/"
 echo "=============================================================================="
+
