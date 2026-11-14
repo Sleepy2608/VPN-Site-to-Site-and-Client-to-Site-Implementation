@@ -51,13 +51,23 @@ flowchart LR
 ├── docs/                       # Báo cáo kỹ thuật chi tiết
 │   └── 02-network-topology.md  # Bản vẽ sơ đồ mạng, bảng IP & thiết lập mạng ảo
 ├── openvpn/                    # Cấu hình OpenVPN C2S và S2S (CCD, template)
+│   ├── pki/
+│   │   └── vars.example        # Cấu hình mẫu biến môi trường Easy-RSA 3
+│   └── client-to-site/
+│       └── client/
+│           ├── client.ovpn.example # Hồ sơ client mẫu (sanitized)
+│           └── template.ovpn   # Khuôn mẫu nhúng chứng chỉ tự động
 ├── ipsec/                      # Cấu hình strongSwan IKEv2 (ipsec.conf, secrets)
 ├── scripts/                    # Bộ công cụ Bash Script tự động hóa
-│   └── common/
-│       ├── install-prerequisites.sh # Cài đặt toàn bộ gói phần mềm cho node
-│       ├── enable-ip-forward.sh     # Kích hoạt IP Forwarding vĩnh viễn
-│       ├── setup-firewall-rules.sh  # Thiết lập iptables & TCP MSS Clamping
-│       └── verify-phase1.sh         # Kiểm tra nghiệm thu tự động Giai đoạn 1
+│   ├── common/
+│   │   ├── install-prerequisites.sh # Cài đặt toàn bộ gói phần mềm cho node
+│   │   ├── enable-ip-forward.sh     # Kích hoạt IP Forwarding vĩnh viễn
+│   │   ├── setup-firewall-rules.sh  # Thiết lập iptables & TCP MSS Clamping
+│   │   └── verify-phase1.sh         # Kiểm tra nghiệm thu tự động Giai đoạn 1
+│   └── pki/
+│       ├── init-ca.sh               # Tự động khởi tạo CA, DH, TLS key & cấp chứng chỉ
+│       ├── build-client-ovpn.sh     # Tự động xuất tệp .ovpn nhúng chứng chỉ inline
+│       └── distribute-certs.sh      # Phân phối chứng chỉ an toàn cho Server & Branch GW
 ├── services/                   # Dịch vụ mô phỏng nội bộ (HQ Intranet Portal)
 └── tests/                      # Ma trận kiểm thử, mẫu pcap & phân tích an ninh
 ```
@@ -74,7 +84,13 @@ flowchart LR
   - [x] Viết script cấu hình tường lửa và MSS Clamping (`scripts/common/setup-firewall-rules.sh`)
   - [x] Viết script kiểm tra nghiệm thu tự động Giai đoạn 1 (`scripts/common/verify-phase1.sh`)
   - [x] Biên soạn tài liệu kiến trúc mạng (`docs/02-network-topology.md`)
-- [ ] **Giai đoạn 2: Xây dựng PKI độc lập với Easy-RSA 3**
+- [x] **Giai đoạn 2: Xây dựng PKI độc lập với Easy-RSA 3**
+  - [x] Tạo file cấu hình mẫu Easy-RSA 3 vars (`openvpn/pki/vars.example`)
+  - [x] Tạo template và hồ sơ mẫu client (.ovpn) nhúng chứng chỉ (`openvpn/client-to-site/client/`)
+  - [x] Viết script tự động hóa khởi tạo CA, DH, TLS-Crypt & cấp chứng chỉ (`scripts/pki/init-ca.sh`)
+  - [x] Viết script tự động đóng gói profile client .ovpn inline (`scripts/pki/build-client-ovpn.sh`)
+  - [x] Viết script phân phối chứng chỉ an toàn sang các node (`scripts/pki/distribute-certs.sh`)
+  - [x] Biên soạn tài liệu kỹ thuật thiết lập PKI, CRL và xác thực OpenSSL (`docs/03-pki-ca-setup.md`)
 - [ ] **Giai đoạn 3: Triển khai Client-to-Site OpenVPN Server & Client**
 - [ ] **Giai đoạn 4: Dựng Web Server nội bộ HQ & Kiểm tra truy cập từ xa**
 - [ ] **Giai đoạn 5: Triển khai Site-to-Site OpenVPN Routed Tunnel (HQ <=> Branch)**
