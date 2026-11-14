@@ -71,9 +71,16 @@ flowchart LR
 │   │   ├── build-client-ovpn.sh     # Tự động xuất tệp .ovpn nhúng chứng chỉ inline
 │   │   └── distribute-certs.sh      # Phân phối chứng chỉ an toàn cho Server & Branch GW
 │   ├── deploy-c2s-server.sh         # Script triển khai & khởi động OpenVPN C2S Server
-│   └── verify-c2s.sh                # Script kiểm tra nghiệm thu kết nối Client-to-Site
-├── services/                   # Dịch vụ mô phỏng nội bộ (HQ Intranet Portal)
-└── tests/                      # Ma trận kiểm thử, mẫu pcap & phân tích an ninh
+│   ├── verify-c2s.sh                # Script kiểm tra nghiệm thu kết nối Client-to-Site
+│   ├── deploy-hq-portal.sh          # Script cài đặt Nginx & triển khai Cổng nội bộ HQ
+│   └── verify-portal.sh             # Script kiểm tra nghiệm thu HTTP Cổng nội bộ
+├── services/                        # Dịch vụ mô phỏng nội bộ (HQ Intranet Portal)
+│   └── intranet-portal/             # Ứng dụng Web Cổng thông tin nội bộ (192.168.10.50)
+│       ├── index.html               # Giao diện chính kèm widget kiểm tra danh tính IP
+│       ├── css/style.css            # Phong cách giao diện Cyber Security Enterprise
+│       ├── js/app.js                # Xử lý logic hiển thị và phân loại IP nguồn
+│       └── files/                   # Kho tài liệu bảo mật phục vụ đo kiểm Wireshark
+└── tests/                           # Ma trận kiểm thử, mẫu pcap & phân tích an ninh
 ```
 
 ---
@@ -102,7 +109,13 @@ flowchart LR
   - [x] Đóng gói profile client và hướng dẫn kết nối Windows OpenVPN GUI
   - [x] Viết script kiểm tra nghiệm thu tự động C2S (`scripts/verify-c2s.sh`)
   - [x] Biên soạn tài liệu kỹ thuật chi tiết Client-to-Site (`docs/04-client-to-site-guide.md`)
-- [ ] **Giai đoạn 4: Dựng Web Server nội bộ HQ & Kiểm tra truy cập từ xa**
+- [x] **Giai đoạn 4: Dựng Web Server nội bộ HQ & Kiểm tra truy cập từ xa**
+  - [x] Thiết kế giao diện Cổng nội bộ chuẩn Cyber Security Enterprise (`services/intranet-portal/`)
+  - [x] Tích hợp widget Network Identity Inspector nhận diện IP dải VPN (`10.8.0.x`)
+  - [x] Xây dựng kho tài liệu bảo mật phục vụ đo kiểm tải file và phân tích Wireshark
+  - [x] Viết script tự động cài đặt Nginx và cấu hình virtual host (`scripts/deploy-hq-portal.sh`)
+  - [x] Viết script tự động kiểm tra nghiệm thu HTTP (`scripts/verify-portal.sh`)
+  - [x] Biên soạn tài liệu tổng quan đề tài và cơ chế bảo vệ dịch vụ nội bộ (`docs/01-project-overview.md`)
 - [ ] **Giai đoạn 5: Triển khai Site-to-Site OpenVPN Routed Tunnel (HQ <=> Branch)**
 - [ ] **Giai đoạn 6: Triển khai mở rộng IPsec IKEv2 bằng strongSwan**
 - [ ] **Giai đoạn 7: Kiểm thử chuyên sâu, Wireshark & Hoàn thiện hồ sơ báo cáo**
