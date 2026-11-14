@@ -159,3 +159,4 @@ echo.
 echo [*] Cam on ban da su dung VPN Management Utility. Tam biet!
 timeout /t 2 >nul
 exit /b 0
+
