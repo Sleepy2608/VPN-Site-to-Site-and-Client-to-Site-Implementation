@@ -54,6 +54,8 @@ flowchart LR
 │   ├── pki/
 │   │   └── vars.example        # Cấu hình mẫu biến môi trường Easy-RSA 3
 │   └── client-to-site/
+│       ├── server/
+│       │   └── server.conf     # Cấu hình OpenVPN C2S Server (UDP 1194, tun0, AES-256-GCM)
 │       └── client/
 │           ├── client.ovpn.example # Hồ sơ client mẫu (sanitized)
 │           └── template.ovpn   # Khuôn mẫu nhúng chứng chỉ tự động
@@ -64,10 +66,12 @@ flowchart LR
 │   │   ├── enable-ip-forward.sh     # Kích hoạt IP Forwarding vĩnh viễn
 │   │   ├── setup-firewall-rules.sh  # Thiết lập iptables & TCP MSS Clamping
 │   │   └── verify-phase1.sh         # Kiểm tra nghiệm thu tự động Giai đoạn 1
-│   └── pki/
-│       ├── init-ca.sh               # Tự động khởi tạo CA, DH, TLS key & cấp chứng chỉ
-│       ├── build-client-ovpn.sh     # Tự động xuất tệp .ovpn nhúng chứng chỉ inline
-│       └── distribute-certs.sh      # Phân phối chứng chỉ an toàn cho Server & Branch GW
+│   ├── pki/
+│   │   ├── init-ca.sh               # Tự động khởi tạo CA, DH, TLS key & cấp chứng chỉ
+│   │   ├── build-client-ovpn.sh     # Tự động xuất tệp .ovpn nhúng chứng chỉ inline
+│   │   └── distribute-certs.sh      # Phân phối chứng chỉ an toàn cho Server & Branch GW
+│   ├── deploy-c2s-server.sh         # Script triển khai & khởi động OpenVPN C2S Server
+│   └── verify-c2s.sh                # Script kiểm tra nghiệm thu kết nối Client-to-Site
 ├── services/                   # Dịch vụ mô phỏng nội bộ (HQ Intranet Portal)
 └── tests/                      # Ma trận kiểm thử, mẫu pcap & phân tích an ninh
 ```
@@ -91,7 +95,13 @@ flowchart LR
   - [x] Viết script tự động đóng gói profile client .ovpn inline (`scripts/pki/build-client-ovpn.sh`)
   - [x] Viết script phân phối chứng chỉ an toàn sang các node (`scripts/pki/distribute-certs.sh`)
   - [x] Biên soạn tài liệu kỹ thuật thiết lập PKI, CRL và xác thực OpenSSL (`docs/03-pki-ca-setup.md`)
-- [ ] **Giai đoạn 3: Triển khai Client-to-Site OpenVPN Server & Client**
+- [x] **Giai đoạn 3: Triển khai Client-to-Site OpenVPN Server & Client**
+  - [x] Soạn thảo cấu hình chuẩn `server-c2s.conf` (`openvpn/client-to-site/server/`)
+  - [x] Viết script tự động hóa cài đặt & khởi chạy C2S Server (`scripts/deploy-c2s-server.sh`)
+  - [x] Cấu hình iptables FORWARD, NAT Masquerade và mở cổng UDP 1194
+  - [x] Đóng gói profile client và hướng dẫn kết nối Windows OpenVPN GUI
+  - [x] Viết script kiểm tra nghiệm thu tự động C2S (`scripts/verify-c2s.sh`)
+  - [x] Biên soạn tài liệu kỹ thuật chi tiết Client-to-Site (`docs/04-client-to-site-guide.md`)
 - [ ] **Giai đoạn 4: Dựng Web Server nội bộ HQ & Kiểm tra truy cập từ xa**
 - [ ] **Giai đoạn 5: Triển khai Site-to-Site OpenVPN Routed Tunnel (HQ <=> Branch)**
 - [ ] **Giai đoạn 6: Triển khai mở rộng IPsec IKEv2 bằng strongSwan**
