@@ -1,7 +1,7 @@
 # TÀI LIỆU KỸ THUẬT: TRIỂN KHAI OPENVPN SITE-TO-SITE ROUTED TUNNEL
 
 > **Dự án:** Thiết lập mạng riêng ảo VPN Site-to-Site và Client-to-Site  
-> **Tài liệu:** `docs/05-site-to-site-guide.md`  
+> **Tài liệu:** `docs/technical-guides/05-site-to-site-guide.md`  
 > **Giai đoạn:** Giai đoạn 5 - Triển khai Site-to-Site OpenVPN Routed Tunnel (HQ <=> Branch)  
 
 ---

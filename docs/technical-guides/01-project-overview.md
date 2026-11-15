@@ -1,7 +1,7 @@
 # TÀI LIỆU KỸ THUẬT: TỔNG QUAN ĐỒ ÁN & MÔ HÌNH BẢO VỆ DỊCH VỤ NỘI BỘ
 
 > **Dự án:** Thiết lập mạng riêng ảo VPN Site-to-Site và Client-to-Site  
-> **Tài liệu:** `docs/01-project-overview.md`  
+> **Tài liệu:** `docs/technical-guides/01-project-overview.md`  
 > **Giai đoạn:** Giai đoạn 4 - Dựng Web Server nội bộ HQ & Kiểm tra truy cập từ xa  
 
 ---
