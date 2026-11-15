@@ -1,7 +1,7 @@
 # TÀI LIỆU KỸ THUẬT: MỞ RỘNG SITE-TO-SITE IPSEC IKEV2 BẰNG STRONGSWAN
 
 > **Dự án:** Thiết lập mạng riêng ảo VPN Site-to-Site và Client-to-Site  
-> **Tài liệu:** `docs/06-ipsec-strongswan-guide.md`  
+> **Tài liệu:** `docs/technical-guides/06-ipsec-strongswan-guide.md`  
 > **Giai đoạn:** Giai đoạn 6 - Triển khai mở rộng IPsec IKEv2 bằng strongSwan  
 
 ---

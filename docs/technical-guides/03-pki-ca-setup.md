@@ -1,7 +1,7 @@
 # TÀI LIỆU KỸ THUẬT: THIẾT LẬP HẠ TẦNG KHÓA CÔNG KHAI PKI VỚI EASY-RSA 3
 
 > **Dự án:** Thiết lập mạng riêng ảo VPN Site-to-Site và Client-to-Site  
-> **Tài liệu:** `docs/03-pki-ca-setup.md`  
+> **Tài liệu:** `docs/technical-guides/03-pki-ca-setup.md`  
 > **Giai đoạn:** Giai đoạn 2 - Xây dựng PKI độc lập với Easy-RSA 3  
 
 ---
