@@ -15,3 +15,4 @@ Thư mục này chứa toàn bộ tài liệu phục vụ buổi báo cáo và b
      - Màn 5: Demo bắt gói tin Wireshark đối chứng và thu hồi chứng chỉ CRL từ chối truy cập thời gian thực.
 2. **[slides.md](file:///c:/University%20Coding%20Project/VPN-Site-to-Site-and-Client-to-Site-Implementation/docs/presentation/slides.md):**
    - **Đề cương 18 Slide PowerPoint / Canva:** Cung cấp đầy đủ nội dung, số liệu, bảng biểu so sánh, mô hình đe dọa STRIDE và cấu trúc trình bày chuẩn học thuật.
+

@@ -119,3 +119,4 @@ flowchart LR
    - Log OpenVPN GUI hiển thị: `VERIFY ERROR: ... certificate revoked`.
    - Log server OpenVPN báo lỗi: `TLS_ERROR: CRL check failed for client1`.
    - **Lời kết thuyết minh:** *"Hệ thống đã thu hồi quyền truy cập trong thời gian thực mà không cần khởi động lại máy chủ và không ảnh hưởng tới bất kỳ nhân viên nào khác."*
+

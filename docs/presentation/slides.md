@@ -187,3 +187,4 @@
 ### SLIDE 18: LỜI CẢM ƠN & HỎI ĐÁP (Q&A)
 - **Lời cảm ơn:** Nhóm xin chân thành cảm ơn Quý Thầy/Cô trong Hội đồng đã lắng nghe bài báo cáo!
 - **Mời Hội đồng đặt câu hỏi:** Nhóm rất mong nhận được những ý kiến đóng góp quý báu từ Quý Thầy/Cô.
+
