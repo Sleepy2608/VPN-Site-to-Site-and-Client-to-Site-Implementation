@@ -1,7 +1,7 @@
 # TÀI LIỆU KỸ THUẬT: BÁO CÁO KIỂM THỬ TOÀN DIỆN & ĐÁNH GIÁ AN NINH HỆ THỐNG VPN
 
 > **Dự án:** Thiết lập mạng riêng ảo VPN Site-to-Site và Client-to-Site  
-> **Tài liệu:** `docs/07-testing-and-security-eval.md`  
+> **Tài liệu:** `docs/technical-guides/07-testing-and-security-eval.md`  
 > **Giai đoạn:** Giai đoạn 7 - Kiểm thử chuyên sâu, Phân tích Wireshark & Đánh giá an ninh  
 
 ---

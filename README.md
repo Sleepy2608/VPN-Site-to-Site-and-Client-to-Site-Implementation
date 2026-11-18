@@ -55,14 +55,18 @@ flowchart LR
 ├── quick-setup.bat             # Công cụ điều khiển và kiểm tra nhanh hệ thống trên Windows
 ├── configs/                    # Mẫu tệp cấu hình mạng & dịch vụ Netplan
 │   └── netplan/                # Cấu hình IP tĩnh cho 4 máy ảo Ubuntu
-├── docs/                       # Hồ sơ tài liệu kỹ thuật chi tiết
-│   ├── 01-project-overview.md  # Tổng quan đề tài & Kiến trúc bảo vệ dịch vụ nội bộ
-│   ├── 02-network-topology.md  # Sơ đồ mạng Lab, Bảng IP & Thiết lập mạng ảo
-│   ├── 03-pki-ca-setup.md      # Hạ tầng PKI độc lập Easy-RSA 3 & Quản lý chứng chỉ X.509
-│   ├── 04-client-to-site-guide.md # Hướng dẫn triển khai OpenVPN Client-to-Site
-│   ├── 05-site-to-site-guide.md   # Hướng dẫn triển khai OpenVPN Site-to-Site (CCD & iroute)
-│   ├── 06-ipsec-strongswan-guide.md # Mở rộng Site-to-Site strongSwan IPsec IKEv2
-│   └── 07-testing-and-security-eval.md # Báo cáo kiểm thử toàn diện, Wireshark & Đánh giá an ninh
+├── docs/                       # Hồ sơ tài liệu kỹ thuật & Thuyết trình
+│   ├── technical-guides/       # 7 tài liệu kỹ thuật chi tiết theo từng chủ đề
+│   │   ├── 01-project-overview.md  # Tổng quan đề tài & Kiến trúc bảo vệ dịch vụ nội bộ
+│   │   ├── 02-network-topology.md  # Sơ đồ mạng Lab, Bảng IP & Thiết lập mạng ảo
+│   │   ├── 03-pki-ca-setup.md      # Hạ tầng PKI độc lập Easy-RSA 3 & Quản lý chứng chỉ X.509
+│   │   ├── 04-client-to-site-guide.md # Hướng dẫn triển khai OpenVPN Client-to-Site
+│   │   ├── 05-site-to-site-guide.md   # Hướng dẫn triển khai OpenVPN Site-to-Site (CCD & iroute)
+│   │   ├── 06-ipsec-strongswan-guide.md # Mở rộng Site-to-Site strongSwan IPsec IKEv2
+│   │   └── 07-testing-and-security-eval.md # Báo cáo kiểm thử toàn diện, Wireshark & Đánh giá an ninh
+│   └── presentation/           # Tài liệu phục vụ báo cáo & bảo vệ đồ án
+│       ├── demo-script.md      # Kịch bản demo trực tiếp 10-15 phút trên máy chiếu
+│       └── slides.md           # Đề cương 18 slide thuyết trình PowerPoint / Canva
 ├── openvpn/                    # Cấu hình OpenVPN C2S và S2S (CCD, template)
 │   ├── pki/                    # Cấu hình biến môi trường Easy-RSA 3 (vars.example)
 │   ├── client-to-site/         # Cấu hình Server C2S (UDP 1194) và Template Client .ovpn
@@ -98,13 +102,13 @@ flowchart LR
 Toàn bộ hệ thống tài liệu kỹ thuật, hướng dẫn cài đặt và kịch bản kiểm thử của đồ án được biên soạn đầy đủ và phân loại chi tiết:
 
 ### 1. Tài Liệu Kỹ Thuật (Architecture & Guides)
-- [x] [01-project-overview.md](file:///c:/University%20Coding%20Project/VPN-Site-to-Site-and-Client-to-Site-Implementation/docs/01-project-overview.md): Tổng quan bài toán, mục tiêu thiết kế và kiến trúc bảo vệ dịch vụ nội bộ.
-- [x] [02-network-topology.md](file:///c:/University%20Coding%20Project/VPN-Site-to-Site-and-Client-to-Site-Implementation/docs/02-network-topology.md): Bản vẽ sơ đồ mạng, bảng phân bổ địa chỉ IP, thiết kế 3 mạng ảo (WAN, HQ LAN, Branch LAN).
-- [x] [03-pki-ca-setup.md](file:///c:/University%20Coding%20Project/VPN-Site-to-Site-and-Client-to-Site-Implementation/docs/03-pki-ca-setup.md): Hướng dẫn thiết lập CA độc lập với Easy-RSA 3, cơ chế cấp chứng chỉ X.509, Diffie-Hellman và khóa HMAC `ta.key`.
-- [x] [04-client-to-site-guide.md](file:///c:/University%20Coding%20Project/VPN-Site-to-Site-and-Client-to-Site-Implementation/docs/04-client-to-site-guide.md): Cấu hình OpenVPN Client-to-Site Server, cơ chế Split-Tunneling và cấu hình OpenVPN GUI trên Windows.
-- [x] [05-site-to-site-guide.md](file:///c:/University%20Coding%20Project/VPN-Site-to-Site-and-Client-to-Site-Implementation/docs/05-site-to-site-guide.md): Cấu hình OpenVPN Site-to-Site Routed Tunnel kết hợp Client Config Directory (CCD) và chỉ thị `iroute`.
-- [x] [06-ipsec-strongswan-guide.md](file:///c:/University%20Coding%20Project/VPN-Site-to-Site-and-Client-to-Site-Implementation/docs/06-ipsec-strongswan-guide.md): Triển khai mở rộng strongSwan IPsec IKEv2 In-Kernel ESP và so sánh đối chiếu với OpenVPN.
-- [x] [07-testing-and-security-eval.md](file:///c:/University%20Coding%20Project/VPN-Site-to-Site-and-Client-to-Site-Implementation/docs/07-testing-and-security-eval.md): Báo cáo tổng kết kiểm thử toàn diện, đo đạc độ trễ/thông lượng, đánh giá an ninh mô hình STRIDE.
+- [x] [01-project-overview.md](file:///c:/University%20Coding%20Project/VPN-Site-to-Site-and-Client-to-Site-Implementation/docs/technical-guides/01-project-overview.md): Tổng quan bài toán, mục tiêu thiết kế và kiến trúc bảo vệ dịch vụ nội bộ.
+- [x] [02-network-topology.md](file:///c:/University%20Coding%20Project/VPN-Site-to-Site-and-Client-to-Site-Implementation/docs/technical-guides/02-network-topology.md): Bản vẽ sơ đồ mạng, bảng phân bổ địa chỉ IP, thiết kế 3 mạng ảo (WAN, HQ LAN, Branch LAN).
+- [x] [03-pki-ca-setup.md](file:///c:/University%20Coding%20Project/VPN-Site-to-Site-and-Client-to-Site-Implementation/docs/technical-guides/03-pki-ca-setup.md): Hướng dẫn thiết lập CA độc lập với Easy-RSA 3, cơ chế cấp chứng chỉ X.509, Diffie-Hellman và khóa HMAC `ta.key`.
+- [x] [04-client-to-site-guide.md](file:///c:/University%20Coding%20Project/VPN-Site-to-Site-and-Client-to-Site-Implementation/docs/technical-guides/04-client-to-site-guide.md): Cấu hình OpenVPN Client-to-Site Server, cơ chế Split-Tunneling và cấu hình OpenVPN GUI trên Windows.
+- [x] [05-site-to-site-guide.md](file:///c:/University%20Coding%20Project/VPN-Site-to-Site-and-Client-to-Site-Implementation/docs/technical-guides/05-site-to-site-guide.md): Cấu hình OpenVPN Site-to-Site Routed Tunnel kết hợp Client Config Directory (CCD) và chỉ thị `iroute`.
+- [x] [06-ipsec-strongswan-guide.md](file:///c:/University%20Coding%20Project/VPN-Site-to-Site-and-Client-to-Site-Implementation/docs/technical-guides/06-ipsec-strongswan-guide.md): Triển khai mở rộng strongSwan IPsec IKEv2 In-Kernel ESP và so sánh đối chiếu với OpenVPN.
+- [x] [07-testing-and-security-eval.md](file:///c:/University%20Coding%20Project/VPN-Site-to-Site-and-Client-to-Site-Implementation/docs/technical-guides/07-testing-and-security-eval.md): Báo cáo tổng kết kiểm thử toàn diện, đo đạc độ trễ/thông lượng, đánh giá an ninh mô hình STRIDE.
 
 ### 2. Kiểm Thử An Ninh & Bắt Gói Tin (Testing & Verification)
 - [x] [tests/test-cases.md](file:///c:/University%20Coding%20Project/VPN-Site-to-Site-and-Client-to-Site-Implementation/tests/test-cases.md): Ma trận 11 ca kiểm thử thực nghiệm (TC-01 đến TC-11) bao gồm kết nối, định tuyến, ứng dụng, phân tích mã hóa và rò rỉ dữ liệu.
@@ -112,6 +116,10 @@ Toàn bộ hệ thống tài liệu kỹ thuật, hướng dẫn cài đặt và
 - [x] [tests/captures/wireshark-analysis.md](file:///c:/University%20Coding%20Project/VPN-Site-to-Site-and-Client-to-Site-Implementation/tests/captures/wireshark-analysis.md): Bóc tách cấu trúc Header trên Wireshark đối chứng giữa gói tin Cleartext, OpenVPN và IPsec ESP.
 - [x] [tests/captures/samples/](file:///c:/University%20Coding%20Project/VPN-Site-to-Site-and-Client-to-Site-Implementation/tests/captures/samples/): Thư mục lưu trữ tệp `.pcap` mẫu và hướng dẫn xuất/mở bằng Wireshark.
 - [x] [screenshots/](file:///c:/University%20Coding%20Project/VPN-Site-to-Site-and-Client-to-Site-Implementation/screenshots/): Quy hoạch danh mục 12 ảnh chụp màn hình minh chứng phục vụ báo cáo và thuyết minh đồ án.
+
+### 3. Thuyết Trình & Kịch Bản Demo (Presentation & Defense)
+- [x] [demo-script.md](file:///c:/University%20Coding%20Project/VPN-Site-to-Site-and-Client-to-Site-Implementation/docs/presentation/demo-script.md): Kịch bản demo trực tiếp 5 màn (10 - 15 phút) trên máy chiếu có sẵn lời dẫn và câu lệnh thao tác.
+- [x] [slides.md](file:///c:/University%20Coding%20Project/VPN-Site-to-Site-and-Client-to-Site-Implementation/docs/presentation/slides.md): Đề cương chi tiết 18 Slide báo cáo PowerPoint / Canva chuẩn học thuật.
 
 ---
 
@@ -154,7 +162,7 @@ Tạo 3 mạng ảo (Internal Networks) tương ứng:
 - `HQ-LAN-Net` (`192.168.10.0/24`)
 - `Branch-LAN-Net` (`192.168.20.0/24`)
 
-Gán card mạng cho 5 máy ảo theo bảng quy hoạch tại [02-network-topology.md](file:///c:/University%20Coding%20Project/VPN-Site-to-Site-and-Client-to-Site-Implementation/docs/02-network-topology.md).
+Gán card mạng cho 5 máy ảo theo bảng quy hoạch tại [02-network-topology.md](file:///c:/University%20Coding%20Project/VPN-Site-to-Site-and-Client-to-Site-Implementation/docs/technical-guides/02-network-topology.md).
 
 #### Bước 2: Cài đặt và cấu hình Gateway Trụ sở chính (`VM-HQ-GW`)
 ```bash

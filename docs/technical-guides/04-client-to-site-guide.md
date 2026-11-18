@@ -1,7 +1,7 @@
 # TÀI LIỆU KỸ THUẬT: TRIỂN KHAI OPENVPN CLIENT-TO-SITE (REMOTE ACCESS)
 
 > **Dự án:** Thiết lập mạng riêng ảo VPN Site-to-Site và Client-to-Site  
-> **Tài liệu:** `docs/04-client-to-site-guide.md`  
+> **Tài liệu:** `docs/technical-guides/04-client-to-site-guide.md`  
 > **Giai đoạn:** Giai đoạn 3 - Triển khai Client-to-Site OpenVPN Server & Client  
 
 ---

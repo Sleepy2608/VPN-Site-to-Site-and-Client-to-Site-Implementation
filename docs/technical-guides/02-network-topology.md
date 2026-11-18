@@ -1,7 +1,7 @@
 # TÀI LIỆU KỸ THUẬT: THIẾT KẾ KIẾN TRÚC MẠNG & TOPOLOGY LAB
 
 > **Dự án:** Thiết lập mạng riêng ảo VPN Site-to-Site và Client-to-Site  
-> **Tài liệu:** `docs/02-network-topology.md`  
+> **Tài liệu:** `docs/technical-guides/02-network-topology.md`  
 > **Giai đoạn:** Giai đoạn 1 - Chuẩn bị máy ảo & Cấu hình mạng tĩnh  
 
 ---
