@@ -1,4 +1,4 @@
-@echo off
+﻿@echo off
 chcp 65001 >nul
 title VPN Site-to-Site & Client-to-Site Management Utility
 color 0A
