@@ -120,8 +120,12 @@ issue_cert "hq-c2s-server" "server"
 # Cấp chứng chỉ cho HQ Gateway (Site-to-Site)
 issue_cert "hq-s2s-gw" "server"
 
-# Cấp chứng chỉ cho máy trạm từ xa (Remote Client)
+# Cấp chứng chỉ cho máy trạm từ xa (Remote Client Windows / client1)
 issue_cert "client1" "client"
+issue_cert "client-windows" "client"
+
+# Cấp chứng chỉ cho máy khách Linux (Remote Client Linux)
+issue_cert "client-linux" "client"
 
 # Cấp chứng chỉ cho Branch Gateway (Site-to-Site Endpoint)
 issue_cert "branch-gw" "client"

@@ -75,9 +75,15 @@ chmod 600 /etc/openvpn/server/*.key /etc/openvpn/server/ta.key 2>/dev/null || tr
 chmod 644 /etc/openvpn/server/*.crt /etc/openvpn/server/*.pem 2>/dev/null || true
 echo "[+] Các chứng chỉ và khóa mật mã đã được bảo vệ an toàn."
 
-# 4. Sao chép tệp cấu hình server-c2s.conf
+# 4. Sao chép tệp cấu hình server-c2s.conf và thư mục ccd-c2s
 echo "[*] Nạp tệp cấu hình ${SERVER_CONF_DEST}..."
 cp "${SERVER_CONF_SRC}" "${SERVER_CONF_DEST}"
+
+if [[ -d "${REPO_ROOT}/openvpn/client-to-site/server/ccd-c2s" ]]; then
+    echo "[*] Nạp cấu hình Client Config Directory (CCD) cấp IP tĩnh..."
+    mkdir -p /etc/openvpn/server/ccd-c2s
+    cp -r "${REPO_ROOT}/openvpn/client-to-site/server/ccd-c2s/"* /etc/openvpn/server/ccd-c2s/
+fi
 
 # 5. Kích hoạt IP Forwarding tại tầng nhân kernel
 echo "[*] Kiểm tra trạng thái chuyển tiếp IPv4..."
@@ -100,6 +106,9 @@ add_rule() {
 # Cho phép lưu lượng giữa tun0 và card LAN eth1
 add_rule filter FORWARD -i tun0 -o eth1 -j ACCEPT
 add_rule filter FORWARD -i eth1 -o tun0 -m state --state RELATED,ESTABLISHED -j ACCEPT
+
+# Cho phép lưu lượng giữa các Client VPN (Client-to-Client qua tun0)
+add_rule filter FORWARD -i tun0 -o tun0 -j ACCEPT
 
 # Bật NAT Masquerade cho dải VPN ra LAN HQ
 add_rule nat POSTROUTING -s 10.8.0.0/24 -o eth1 -j MASQUERADE
