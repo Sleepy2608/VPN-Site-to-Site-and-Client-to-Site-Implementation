@@ -52,7 +52,7 @@ server {
     listen 80 default_server;
     listen [::]:80 default_server;
 
-    server_name portal.corp.vpn.internal 192.168.10.50 localhost;
+    server_name portal.corp.vpn.internal 192.168.10.50 192.168.10.1 10.8.0.1 172.16.1.10 localhost;
     root /var/www/html;
     index index.html;
 
