@@ -65,6 +65,7 @@ flowchart LR
 │   │   ├── 06-ipsec-strongswan-guide.md # Mở rộng Site-to-Site strongSwan IPsec IKEv2
 │   │   └── 07-testing-and-security-eval.md # Báo cáo kiểm thử toàn diện, Wireshark & Đánh giá an ninh
 │   └── presentation/           # Tài liệu phục vụ báo cáo & bảo vệ đồ án
+│       ├── lab-setup-guide.md  # Hướng dẫn thiết lập phòng Lab, Hypervisor & Triển khai toàn diện
 │       ├── demo-script.md      # Kịch bản demo trực tiếp 10-15 phút trên máy chiếu
 │       └── slides.md           # Đề cương 18 slide thuyết trình PowerPoint / Canva
 ├── openvpn/                    # Cấu hình OpenVPN C2S và S2S (CCD, template)
@@ -118,6 +119,7 @@ Toàn bộ hệ thống tài liệu kỹ thuật, hướng dẫn cài đặt và
 - [x] [screenshots/](file:///c:/University%20Coding%20Project/VPN-Site-to-Site-and-Client-to-Site-Implementation/screenshots/): Quy hoạch danh mục 12 ảnh chụp màn hình minh chứng phục vụ báo cáo và thuyết minh đồ án.
 
 ### 3. Thuyết Trình & Kịch Bản Demo (Presentation & Defense)
+- [x] [lab-setup-guide.md](file:///c:/University%20Coding%20Project/VPN-Site-to-Site-and-Client-to-Site-Implementation/docs/presentation/lab-setup-guide.md): Hướng dẫn chi tiết thiết lập môi trường phòng Lab từ A-Z, cấu hình card mạng Hypervisor, đặt IP tĩnh Netplan và checklist tổng duyệt trước buổi demo.
 - [x] [demo-script.md](file:///c:/University%20Coding%20Project/VPN-Site-to-Site-and-Client-to-Site-Implementation/docs/presentation/demo-script.md): Kịch bản demo trực tiếp 5 màn (10 - 15 phút) trên máy chiếu có sẵn lời dẫn và câu lệnh thao tác.
 - [x] [slides.md](file:///c:/University%20Coding%20Project/VPN-Site-to-Site-and-Client-to-Site-Implementation/docs/presentation/slides.md): Đề cương chi tiết 18 Slide báo cáo PowerPoint / Canva chuẩn học thuật.
 

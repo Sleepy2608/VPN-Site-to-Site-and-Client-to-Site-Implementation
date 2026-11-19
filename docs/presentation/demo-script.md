@@ -20,33 +20,31 @@ flowchart LR
 
 ### Màn 1: Khởi Động Môi Trường & Giới Thiệu Lab (1 phút)
 1. **Chuẩn bị trước khi lên bục thuyết trình:**
-   - Khởi động sẵn 5 máy ảo trong VirtualBox/VMware: `VM-HQ-GW`, `VM-Branch-GW`, `VM-HQ-Server`, `VM-Branch-PC`, `VM-Remote-PC`.
-   - Mở sẵn cửa sổ terminal của 2 Gateway và cửa sổ Windows của Remote PC.
+   - Đảm bảo toàn bộ hạ tầng mạng, máy ảo và dịch vụ đã được triển khai và kiểm tra theo tài liệu tiền kỳ: [lab-setup-guide.md](file:///c:/University%20Coding%20Project/VPN-Site-to-Site-and-Client-to-Site-Implementation/docs/presentation/lab-setup-guide.md).
+   - Khởi động sẵn 4 máy ảo Ubuntu: `VM-HQ-GW`, `VM-Branch-GW`, `VM-HQ-Server`, `VM-Branch-PC` và máy khách Windows (Remote Worker).
+   - Mở sẵn file `quick-setup.bat` trên Windows và cửa sổ terminal của 2 Gateway.
 2. **Lời dẫn thuyết minh mẫu:**
-   > *"Kính thưa Thầy/Cô Hội đồng, hệ thống phòng Lab của nhóm đã sẵn sàng với 5 máy ảo mô phỏng hoàn chỉnh mạng doanh nghiệp: Trụ sở chính HQ (192.168.10.0/24), Chi nhánh Branch (192.168.20.0/24) và Nhân viên từ xa kết nối qua mạng công cộng WAN (172.16.1.0/24)."*
+   > *"Kính thưa Thầy/Cô Hội đồng, hệ thống phòng Lab của nhóm đã sẵn sàng với 4 máy ảo và 1 máy trạm Windows mô phỏng hoàn chỉnh mạng doanh nghiệp: Trụ sở chính HQ (192.168.10.0/24), Chi nhánh Branch (192.168.20.0/24) và Nhân viên từ xa kết nối qua mạng công cộng WAN (172.16.1.0/24)."*
 
 ---
 
 ### Màn 2: Demo Client-to-Site OpenVPN — Nhân Viên Từ Xa Kết Nối An Toàn (3 phút)
 1. **Thao tác 1 - Kết nối VPN:**
-   - Trên máy Windows `VM-Remote-PC` (IP WAN `172.16.1.100`), mở phần mềm **OpenVPN GUI**.
-   - Nhấp chuột phải chọn profile `client1` -> bấm **Connect**.
+   - Trên máy Windows Remote Worker (IP WAN `172.16.1.100`), mở phần mềm **OpenVPN GUI**.
+   - Nhấp chuột phải vào biểu tượng OpenVPN dưới khay hệ thống $\rightarrow$ chọn profile `client1` $\rightarrow$ bấm **Connect**.
    - Biểu tượng OpenVPN chuyển sang màu **xanh lá cây** báo hiệu kết nối thành công.
-2. **Thao tác 2 - Xác nhận IP và Routing Split-Tunneling:**
-   - Mở tiện ích `quick-setup.bat` (hoặc CMD):
-     ```cmd
-     ipconfig
-     route print -4 | findstr 192.168.10.
-     ```
+2. **Thao tác 2 - Xác nhận IP và Routing Split-Tunneling bằng `quick-setup.bat`:**
+   - Trên cửa sổ tiện ích [quick-setup.bat](file:///c:/University%20Coding%20Project/VPN-Site-to-Site-and-Client-to-Site-Implementation/quick-setup.bat), nhấn phím **`[3]`**:
+     - Màn hình tự động in bảng định tuyến (Route Print).
    - **Chỉ rõ trên màn chiếu:**
-     - Card ảo `OpenVPN TAP-Windows6` nhận địa chỉ IP an toàn `10.8.0.2`.
-     - Chỉ thị route `192.168.10.0/24` trỏ qua Gateway `10.8.0.1`.
-     - Default Gateway (`0.0.0.0/0`) vẫn trỏ về card mạng vật lý gốc (Split-Tunneling giúp người dùng vẫn lướt Internet bình thường không bị chậm).
+     - Card mạng ảo `OpenVPN TAP-Windows6` nhận địa chỉ IP an toàn `10.8.0.2`.
+     - Chỉ thị route dải mạng nội bộ `192.168.10.0/24` trỏ qua Gateway đường hầm `10.8.0.1`.
+     - Default Gateway (`0.0.0.0/0`) vẫn trỏ về card mạng vật lý gốc $\rightarrow$ Minh chứng cơ chế **Split-Tunneling** giúp người dùng vẫn lướt Internet bình thường không bị nghẽn băng thông VPN.
 3. **Thao tác 3 - Truy cập Cổng thông tin nội bộ HQ (Intranet Portal):**
-   - Mở trình duyệt web truy cập: `http://192.168.10.50`
+   - Trên tiện ích `quick-setup.bat`, nhấn phím **`[2]`** (hoặc mở trình duyệt truy cập: `http://192.168.10.50`).
    - **Điểm nhấn thuyết minh:** Trang Web hiển thị giao diện Cyber Security với widget nhận diện IP nguồn:
      `SECURE CLIENT DETECTED: 10.8.0.2 (Remote Worker VPN Tunnel)`.
-   - Bấm nút **"Test Download Speed"** để tải file mẫu 1MB qua đường hầm mã hóa AES-256-GCM.
+   - Trên `quick-setup.bat`, bấm phím **`[9]`** (hoặc bấm nút "Test Download Speed" trên Web) để tải tệp 1 MB qua đường hầm mã hóa AES-256-GCM và hiển thị tốc độ truyền dẫn thực tế.
 
 ---
 
