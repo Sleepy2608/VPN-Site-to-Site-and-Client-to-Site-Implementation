@@ -7,7 +7,7 @@ Thư mục này chứa toàn bộ tài liệu phục vụ buổi báo cáo và b
 ## 📂 Danh Mục Tài Liệu
 
 1. **[lab-setup-guide.md](file:///c:/University%20Coding%20Project/VPN-Site-to-Site-and-Client-to-Site-Implementation/docs/presentation/lab-setup-guide.md):**
-   - **Hướng dẫn thiết lập phòng Lab & Triển khai toàn diện:** Hướng dẫn chi tiết từng bước chuẩn bị 4 máy ảo Linux, cấu hình card mạng trên VirtualBox/VMware, đặt IP tĩnh Netplan, chạy tự động `deploy-all.sh` theo thứ tự phụ thuộc, thiết lập máy khách Windows và bảng Pre-flight Checklist trước khi lên bục bảo vệ.
+   - **Hướng dẫn thiết lập phòng Lab 3 Máy & Triển khai toàn diện:** Hướng dẫn chi tiết từng bước chuẩn bị 2 máy ảo Ubuntu (Server + Client Linux), cấu hình máy Windows thật làm Client Windows, cấu hình card mạng trên VirtualBox/VMware, đặt IP tĩnh Netplan, chạy 1-click `deploy-all.sh`, thiết lập máy khách Windows và bảng Pre-flight Checklist trước khi lên bục bảo vệ.
 2. **[demo-script.md](file:///c:/University%20Coding%20Project/VPN-Site-to-Site-and-Client-to-Site-Implementation/docs/presentation/demo-script.md):**
    - **Kịch bản Demo trực tiếp (10 - 15 phút):** Chi tiết 5 màn trình diễn thực hành trên máy chiếu kèm lời dẫn thuyết minh mẫu và thao tác nhanh bằng `quick-setup.bat`:
      - Màn 1: Khởi động môi trường Lab và giới thiệu kiến trúc.

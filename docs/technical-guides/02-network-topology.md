@@ -45,78 +45,62 @@ flowchart LR
 
 ## 2. Bảng Quy Hoạch IP, Subnet và Gateway Chi Tiết
 
-| Node / Máy ảo | Tên Interface | Địa chỉ IP & Subnet | Default Gateway | Chức năng chi tiết |
+### 2.1. Bảng quy hoạch mô hình 3 Máy Ảo (Khuyến nghị chuẩn hóa)
+
+| Node / Máy ảo | Tên Interface | Địa chỉ IP & Subnet | Default Gateway | Chức năng chi tiết trong Lab |
 | :--- | :--- | :--- | :--- | :--- |
-| **Mạng WAN Giả lập** | Virtual Switch | `172.16.1.0/24` | Không có | Đại diện cho môi trường Internet công cộng kết nối giữa các chi nhánh |
-| **VM-HQ-GW** (HQ Gateway) | `eth0` (WAN)<br>`eth1` (LAN)<br>`tun0` (C2S)<br>`tun1` (S2S) | `172.16.1.10/24`<br>`192.168.10.1/24`<br>`10.8.0.1/24`<br>`10.9.0.1/24` | None<br>None<br>None<br>None | VPN Gateway tại Trụ sở: phục vụ Remote Worker truy cập và kết nối Site-to-Site sang Chi nhánh |
-| **VM-HQ-Server** (HQ Internal) | `eth0` (LAN) | `192.168.10.50/24` | `192.168.10.1` | Máy chủ Web Portal và tài liệu nội bộ cần được bảo vệ |
-| **VM-Branch-GW** (Branch Gateway) | `eth0` (WAN)<br>`eth1` (LAN)<br>`tun0` (S2S) | `172.16.1.20/24`<br>`192.168.20.1/24`<br>`10.9.0.2/24` | None<br>None<br>None | VPN Gateway tại Chi nhánh: làm đầu cuối VPN kết nối đường hầm Site-to-Site về HQ |
-| **VM-Branch-PC** (Branch Client) | `eth0` (LAN) | `192.168.20.50/24` | `192.168.20.1` | Máy trạm làm việc của nhân viên chi nhánh, truy cập tài nguyên HQ qua VPN Gateway |
-| **VM-Remote-PC** (Remote Worker) | Card mạng vật lý / ảo<br>`tun0` (Virtual) | `172.16.1.100/24`<br>`10.8.0.2/24` (Cấp động) | Local Default Gateway<br>`10.8.0.1` (Pushed) | Máy tính xách tay của nhân viên từ xa kết nối Client-to-Site về HQ |
+| **Mạng WAN Giả lập** | Virtual Switch | `172.16.1.0/24` | Không có | Môi trường mạng công cộng kết nối giữa Server và các Client |
+| **VM-SERVER** (Ubuntu 22.04) | `eth0` (WAN)<br>`eth1` (LAN)<br>`tun0` (C2S)<br>`tun1` (S2S) | `172.16.1.10/24`<br>`192.168.10.1/24`<br>`10.8.0.1/24`<br>`10.9.0.1/24` | None<br>None<br>None<br>None | Máy chủ tích hợp: Cổng VPN Server (C2S + S2S + IPsec), PKI CA, Web Portal Nginx và File Benchmark |
+| **VM-CLIENT-LINUX** (Ubuntu 22.04) | `eth0` (WAN)<br>`eth1` (LAN)<br>`tun0` (Tunnel) | `172.16.1.20/24`<br>`192.168.20.1/24`<br>`10.8.0.2 / 10.9.0.2` | None<br>None<br>None | Máy khách Linux kiêm Cổng Chi nhánh: kết nối Site-to-Site về Server hoặc Client-to-Site |
+| **CLIENT WINDOWS** (Máy thật / VM) | Card mạng ảo<br>`tun0` (Virtual) | `172.16.1.100/24`<br>`10.8.0.3/24` (Cố định) | Local Gateway<br>`10.8.0.1` (Pushed) | Máy tính xách tay của nhân viên từ xa: kết nối Client-to-Site và điều khiển bằng `quick-setup.bat` |
 
 ---
 
 ## 3. Cấu hình Card Mạng Ảo trên Hypervisor (VirtualBox / VMware)
 
-Để đảm bảo các phân vùng mạng hoạt động cô lập và đúng thiết kế:
-
-### 3.1. Thiết lập 3 mạng ảo (Internal Networks)
-- **`WAN-Net`:** Mạng nội bộ kết nối các card WAN (`172.16.1.0/24`).
+### 3.1. Thiết lập cho Mô hình 3 Máy (Khuyến nghị)
+- **`WAN-Net`:** Mạng Host-Only kết nối các card WAN (`172.16.1.0/24`).
 - **`HQ-LAN-Net`:** Mạng nội bộ riêng của Trụ sở chính (`192.168.10.0/24`).
 - **`Branch-LAN-Net`:** Mạng nội bộ riêng của Văn phòng Chi nhánh (`192.168.20.0/24`).
 
-### 3.2. Ánh xạ Card mạng trên từng máy ảo
-
-1. **`VM-HQ-GW`:**
-   - Adapter 1: `Internal Network` -> Tên: `WAN-Net` (nhận diện trong OS là `eth0`)
-   - Adapter 2: `Internal Network` -> Tên: `HQ-LAN-Net` (nhận diện trong OS là `eth1`)
-2. **`VM-Branch-GW`:**
-   - Adapter 1: `Internal Network` -> Tên: `WAN-Net` (nhận diện trong OS là `eth0`)
-   - Adapter 2: `Internal Network` -> Tên: `Branch-LAN-Net` (nhận diện trong OS là `eth1`)
-3. **`VM-HQ-Server`:**
-   - Adapter 1: `Internal Network` -> Tên: `HQ-LAN-Net` (nhận diện trong OS là `eth0`)
-4. **`VM-Branch-PC`:**
-   - Adapter 1: `Internal Network` -> Tên: `Branch-LAN-Net` (nhận diện trong OS là `eth0`)
-5. **`VM-Remote-PC` (Windows):**
-   - Adapter 1: `Internal Network` -> Tên: `WAN-Net` (nhận diện trong OS là Ethernet Adapter, đặt IP `172.16.1.100/24`)
+### 3.2. Ánh xạ Card mạng trên từng node (3-VM)
+1. **`VM-SERVER`:**
+   - Adapter 1: `Host-only Adapter` (mạng `WAN-Net`, nhận diện là `eth0`)
+   - Adapter 2: `Internal Network` (tên `HQ-LAN-Net`, nhận diện là `eth1`)
+2. **`VM-CLIENT-LINUX`:**
+   - Adapter 1: `Host-only Adapter` (mạng `WAN-Net`, nhận diện là `eth0`)
+   - Adapter 2: `Internal Network` (tên `Branch-LAN-Net`, nhận diện là `eth1`)
+3. **`CLIENT WINDOWS` (Máy thật Windows):**
+   - Adapter Host-Only trên Windows đặt IP tĩnh: `172.16.1.100/24`.
 
 ---
 
 ## 4. Cài đặt IP Tĩnh Bằng Netplan trên Ubuntu Server
 
-Các tệp cấu hình mẫu đã được lưu trong thư mục `configs/netplan/`:
+Các tệp cấu hình mẫu lưu tại thư mục `configs/netplan/`:
 
-### 4.1. Cấu hình trên VM-HQ-GW
-Sao chép `configs/netplan/01-netcfg-hq-gw.yaml` vào `/etc/netplan/01-netcfg.yaml`:
+### 4.1. Cấu hình trên VM-SERVER (Mô hình 3-VM)
+Sao chép `configs/netplan/01-netcfg-server.yaml` vào `/etc/netplan/01-netcfg.yaml`:
 ```bash
-sudo cp configs/netplan/01-netcfg-hq-gw.yaml /etc/netplan/01-netcfg.yaml
+sudo cp configs/netplan/01-netcfg-server.yaml /etc/netplan/01-netcfg.yaml
 sudo chmod 600 /etc/netplan/01-netcfg.yaml
 sudo netplan apply
 ```
 
-### 4.2. Cấu hình trên VM-Branch-GW
-Sao chép `configs/netplan/01-netcfg-branch-gw.yaml` vào `/etc/netplan/01-netcfg.yaml`:
+### 4.2. Cấu hình trên VM-CLIENT-LINUX (Mô hình 3-VM)
+Sao chép `configs/netplan/01-netcfg-client-linux.yaml` vào `/etc/netplan/01-netcfg.yaml`:
 ```bash
-sudo cp configs/netplan/01-netcfg-branch-gw.yaml /etc/netplan/01-netcfg.yaml
+sudo cp configs/netplan/01-netcfg-client-linux.yaml /etc/netplan/01-netcfg.yaml
 sudo chmod 600 /etc/netplan/01-netcfg.yaml
 sudo netplan apply
 ```
 
-### 4.3. Cấu hình trên VM-HQ-Server
-Sao chép `configs/netplan/01-netcfg-hq-server.yaml` vào `/etc/netplan/01-netcfg.yaml`:
-```bash
-sudo cp configs/netplan/01-netcfg-hq-server.yaml /etc/netplan/01-netcfg.yaml
-sudo chmod 600 /etc/netplan/01-netcfg.yaml
-sudo netplan apply
-```
-
-### 4.4. Cấu hình trên VM-Branch-PC
-Sao chép `configs/netplan/01-netcfg-branch-pc.yaml` vào `/etc/netplan/01-netcfg.yaml`:
-```bash
-sudo cp configs/netplan/01-netcfg-branch-pc.yaml /etc/netplan/01-netcfg.yaml
-sudo chmod 600 /etc/netplan/01-netcfg.yaml
-sudo netplan apply
-```
+### 4.3. Cấu hình cho mô hình 5 máy ảo phân tách (Tùy chọn mở rộng)
+Nếu người dùng triển khai mô hình 5 máy ảo cũ:
+- HQ Gateway: `configs/netplan/01-netcfg-hq-gw.yaml`
+- Branch Gateway: `configs/netplan/01-netcfg-branch-gw.yaml`
+- HQ Server: `configs/netplan/01-netcfg-hq-server.yaml`
+- Branch PC: `configs/netplan/01-netcfg-branch-pc.yaml`
 
 ---
 

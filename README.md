@@ -13,36 +13,33 @@
 
 ---
 
-## 📌 Tổng Quan Kiến Trúc Mạng
+## 📌 Tổng Quan Kiến Trúc Mạng (Mô Hình 3 Máy Tối Ưu Hóa)
 
 ```mermaid
 flowchart LR
-    subgraph HQ_SITE ["Trụ sở chính (HQ Site - 192.168.10.0/24)"]
-        HQ_Server["HQ Internal Server\n(Web / Docs Portal)\nIP: 192.168.10.50"]
-        HQ_GW["HQ VPN Gateway\n(Ubuntu Server 22.04)\nLAN: 192.168.10.1\nWAN: 172.16.1.10"]
-        HQ_Server <-->|"LAN (HQ-LAN-Net)"| HQ_GW
+    subgraph SERVER_NODE ["1. MÁY CHỦ (VM-SERVER - Ubuntu Server 22.04)"]
+        SRV["VPN Server (C2S UDP 1194 & S2S UDP 1195)\nstrongSwan IPsec IKEv2\nNginx Web Portal & PKI CA\nWAN: 172.16.1.10\nInternal LAN: 192.168.10.1"]
     end
 
     subgraph WAN_ENV ["Mạng WAN Giả lập (172.16.1.0/24)"]
         WAN_SW["Virtual Switch (WAN-Net)"]
     end
 
-    subgraph BRANCH_SITE ["Văn phòng Chi nhánh (192.168.20.0/24)"]
-        BR_GW["Branch VPN Gateway\n(Ubuntu Server 22.04)\nWAN: 172.16.1.20\nLAN: 192.168.20.1"]
-        BR_PC["Branch Client Host\nIP: 192.168.20.50"]
-        BR_GW <-->|"LAN (Branch-LAN-Net)"| BR_PC
+    subgraph CLIENT_LINUX ["2. CLIENT LINUX (VM-CLIENT-LINUX - Ubuntu 22.04)"]
+        CL["Branch Gateway & Linux Client\nWAN: 172.16.1.20\nBranch LAN: 192.168.20.1\nAssigned VPN IP: 10.8.0.2 / 10.9.0.2"]
     end
 
-    subgraph REMOTE_WORKER ["Nhân viên làm việc từ xa"]
-        RW_PC["Remote Worker Laptop\n(Windows 10/11)\nPhysical WAN: 172.16.1.100\nAssigned VPN IP: 10.8.0.2"]
+    subgraph CLIENT_WINDOWS ["3. CLIENT WINDOWS (Máy thật Windows / VM-Windows)"]
+        CW["Windows Remote Worker\nPhysical WAN: 172.16.1.100\nAssigned VPN IP: 10.8.0.3\nCông cụ: OpenVPN GUI + quick-setup.bat"]
     end
 
-    HQ_GW <-->|"eth0 (WAN)"| WAN_SW
-    WAN_SW <-->|"eth0 (WAN)"| BR_GW
-    WAN_SW <-->|"Wi-Fi / Ethernet"| RW_PC
+    SRV <-->|"eth0 (WAN 172.16.1.10)"| WAN_SW
+    WAN_SW <-->|"eth0 (WAN 172.16.1.20)"| CL
+    WAN_SW <-->|"Host-Only / Ethernet"| CW
 
-    RW_PC -.->|"Tunnel 1: OpenVPN Client-to-Site (10.8.0.0/24)\n[UDP 1194 - AES-256-GCM]"| HQ_GW
-    BR_GW -.->|"Tunnel 2: OpenVPN/IPsec Site-to-Site (10.9.0.0/24)\n[UDP 1195 / ESP Proto 50]"| HQ_GW
+    CW -.->|"Tunnel 1: OpenVPN Client-to-Site (UDP 1194)\n[IP ảo: 10.8.0.3 - AES-256-GCM]"| SRV
+    CL -.->|"Tunnel 2: OpenVPN S2S (UDP 1195)\nhoặc strongSwan IPsec (ESP Proto 50)"| SRV
+    CW <-.->|"Client-to-Client qua VPN Tunnel\n(10.8.0.3 <=> 10.8.0.2)"| CL
 ```
 
 ---
@@ -138,19 +135,24 @@ quick-setup.bat
 ```
 *Tính năng:* Menu tương tác hỗ trợ kiểm tra thông mạng (Ping), mở Web Portal nội bộ, kiểm tra bảng route split-tunnel, chạy traceroute, kết nối SSH nhanh tới các máy ảo, và đo tốc độ tải file bảo mật.
 
-#### 2. Trên các máy ảo Ubuntu Linux (HQ-GW, Branch-GW, HQ-Server, Branch-PC):
+#### 2. Trên các máy ảo Ubuntu Linux:
 Sử dụng script triển khai tự động toàn diện [scripts/deploy-all.sh](file:///c:/University%20Coding%20Project/VPN-Site-to-Site-and-Client-to-Site-Implementation/scripts/deploy-all.sh):
+
 ```bash
-# Triển khai trọn gói trên HQ Gateway (PKI CA + C2S + S2S OpenVPN + IPsec):
+# === CÁCH 1: MÔ HÌNH 3 MÁY ẢO (KHUYẾN NGHỊ - TIẾT KIỆM TÀI NGUYÊN) ===
+# Trên VM-SERVER (Triển khai toàn bộ: CA + C2S + S2S OpenVPN + IPsec + Web Portal):
+sudo bash scripts/deploy-all.sh server
+
+# Đẩy chứng chỉ từ Server sang Client Linux:
+sudo bash scripts/pki/distribute-certs.sh branch-gw 172.16.1.20
+
+# Trên VM-CLIENT-LINUX (Khởi chạy OpenVPN S2S Client & IPsec):
+sudo bash scripts/deploy-all.sh client-linux
+
+# === CÁCH 2: MÔ HÌNH 5 MÁY ẢO MỞ RỘNG (TÙY CHỌN PHÂN TÁCH ĐỘC LẬP) ===
 sudo bash scripts/deploy-all.sh hq-gw
-
-# Triển khai trọn gói trên Branch Gateway (S2S OpenVPN + IPsec):
 sudo bash scripts/deploy-all.sh branch-gw
-
-# Triển khai trọn gói trên HQ Internal Server (Nginx Web Portal + Benchmark files):
 sudo bash scripts/deploy-all.sh hq-server
-
-# Kiểm tra kết nối từ máy trạm Chi nhánh:
 sudo bash scripts/deploy-all.sh branch-pc
 ```
 
