@@ -1,2 +1,3 @@
 # Cấu hình IP tĩnh cố định cho VM-Client-Linux
 ifconfig-push 10.8.0.2 255.255.255.0
+

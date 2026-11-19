@@ -1,2 +1,3 @@
 # Cấu hình IP tĩnh cố định cho client1 (Windows Remote Worker)
 ifconfig-push 10.8.0.3 255.255.255.0
+
