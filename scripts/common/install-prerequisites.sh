@@ -24,11 +24,28 @@ echo "[*] Đang cập nhật danh mục gói hệ thống..."
 apt update -y
 
 case "${ROLE}" in
-    gw|gateway)
-        echo "[*] Cài đặt gói cho VPN Gateway (OpenVPN, strongSwan, iptables, tools)..."
+    gw|gateway|hq-gw|server|vm-server)
+        echo "[*] Cài đặt gói cho VPN Gateway / VM-Server (OpenVPN, strongSwan, Nginx, iptables, tools)..."
         DEBIAN_FRONTEND=noninteractive apt install -y \
             openvpn \
             easy-rsa \
+            strongswan \
+            strongswan-pki \
+            libstrongswan-extra-plugins \
+            nginx \
+            iptables \
+            iptables-persistent \
+            netfilter-persistent \
+            net-tools \
+            tcpdump \
+            traceroute \
+            curl \
+            chrony
+        ;;
+    branch-gw|client-linux|vm-client-linux)
+        echo "[*] Cài đặt gói cho Branch Gateway / Client Linux (OpenVPN, strongSwan, iptables, tools)..."
+        DEBIAN_FRONTEND=noninteractive apt install -y \
+            openvpn \
             strongswan \
             strongswan-pki \
             libstrongswan-extra-plugins \
@@ -41,8 +58,8 @@ case "${ROLE}" in
             curl \
             chrony
         ;;
-    server)
-        echo "[*] Cài đặt gói cho Internal Server (Nginx, curl, chrony)..."
+    legacy-server)
+        echo "[*] Cài đặt gói cho Internal Server riêng biệt (Nginx, curl, chrony)..."
         DEBIAN_FRONTEND=noninteractive apt install -y \
             nginx \
             curl \
@@ -59,7 +76,7 @@ case "${ROLE}" in
             chrony
         ;;
     *)
-        echo "[ERROR] Vai trò không hợp lệ: '${ROLE}'. Chọn: gw | server | pc" >&2
+        echo "[ERROR] Vai trò không hợp lệ: '${ROLE}'. Chọn: server | client-linux | gw | pc" >&2
         exit 1
         ;;
 esac

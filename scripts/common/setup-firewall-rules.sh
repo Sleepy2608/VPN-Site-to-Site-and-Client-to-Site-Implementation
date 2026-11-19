@@ -37,12 +37,15 @@ echo "[*] Cấu hình TCP MSS Clamping..."
 add_iptables_rule mangle FORWARD -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu
 
 # 2. Cấu hình theo từng vai trò Gateway
-if [[ "${ROLE}" == "hq-gw" ]]; then
-    echo "[*] Áp dụng quy tắc cho HQ Gateway (VM-HQ-GW)..."
+if [[ "${ROLE}" == "hq-gw" || "${ROLE}" == "server" || "${ROLE}" == "vm-server" ]]; then
+    echo "[*] Áp dụng quy tắc cho HQ Gateway / VM-Server (${ROLE})..."
 
-    # Cho phép lưu lượng từ Client-to-Site (tun0) vào LAN (eth1)
+    # Cho phép lưu lượng từ Client-to-Site (tun0) vào LAN (eth1) và ngược lại
     add_iptables_rule filter FORWARD -i tun0 -o eth1 -j ACCEPT
     add_iptables_rule filter FORWARD -i eth1 -o tun0 -m state --state RELATED,ESTABLISHED -j ACCEPT
+
+    # Cho phép lưu lượng giữa các client VPN (Client-to-Client qua tun0)
+    add_iptables_rule filter FORWARD -i tun0 -o tun0 -j ACCEPT
 
     # Cho phép lưu lượng từ Site-to-Site (tun1) qua lại với LAN (eth1)
     add_iptables_rule filter FORWARD -i tun1 -o eth1 -j ACCEPT
@@ -58,13 +61,17 @@ if [[ "${ROLE}" == "hq-gw" ]]; then
     add_iptables_rule filter INPUT -i eth0 -p udp --dport 1194 -j ACCEPT
     add_iptables_rule filter INPUT -i eth0 -p udp --dport 1195 -j ACCEPT
 
+    # Mở cổng Web Portal Nginx (HTTP 80 / HTTPS 443)
+    add_iptables_rule filter INPUT -p tcp --dport 80 -j ACCEPT
+    add_iptables_rule filter INPUT -p tcp --dport 443 -j ACCEPT
+
     # Mở cổng IPsec (IKEv2 & NAT-T & ESP)
     add_iptables_rule filter INPUT -i eth0 -p udp --dport 500 -j ACCEPT
     add_iptables_rule filter INPUT -i eth0 -p udp --dport 4500 -j ACCEPT
     add_iptables_rule filter INPUT -i eth0 -p esp -j ACCEPT
 
-elif [[ "${ROLE}" == "branch-gw" ]]; then
-    echo "[*] Áp dụng quy tắc cho Branch Gateway (VM-Branch-GW)..."
+elif [[ "${ROLE}" == "branch-gw" || "${ROLE}" == "client-linux" || "${ROLE}" == "vm-client-linux" ]]; then
+    echo "[*] Áp dụng quy tắc cho Branch Gateway / Client-Linux (${ROLE})..."
 
     # Cho phép chuyển tiếp giữa Site-to-Site tunnel (tun0) và LAN Branch (eth1)
     add_iptables_rule filter FORWARD -i tun0 -o eth1 -j ACCEPT
