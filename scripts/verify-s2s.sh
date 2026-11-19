@@ -29,9 +29,16 @@ if [[ "${NODE_ROLE}" == "auto" ]]; then
     elif ip addr show 2>/dev/null | grep -q "192.168.20.50"; then
         NODE_ROLE="branch-pc"
     else
-        echo -e "${YELLOW}[WARN] Không nhận diện được IP. Mặc định kiểm tra từ góc độ Branch PC...${NC}"
-        NODE_ROLE="branch-pc"
+        echo -e "${YELLOW}[WARN] Không nhận diện được IP. Mặc định kiểm tra từ góc độ Branch GW / Client-Linux...${NC}"
+        NODE_ROLE="branch-gw"
     fi
+fi
+
+# Chuyển đổi alias tên 3-VM sang vai trò tương đương
+if [[ "${NODE_ROLE}" == "server" || "${NODE_ROLE}" == "vm-server" ]]; then
+    NODE_ROLE="hq-gw"
+elif [[ "${NODE_ROLE}" == "client-linux" || "${NODE_ROLE}" == "vm-client-linux" ]]; then
+    NODE_ROLE="branch-gw"
 fi
 
 echo -e "[*] Đang thực hiện kiểm tra từ node: ${YELLOW}${NODE_ROLE}${NC}\n"

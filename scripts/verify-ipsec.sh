@@ -28,8 +28,15 @@ if [[ "${ROLE}" == "auto" ]]; then
     elif ip addr show 2>/dev/null | grep -q "192.168.20.50"; then
         ROLE="branch-pc"
     else
-        ROLE="branch-pc"
+        ROLE="branch-gw"
     fi
+fi
+
+# Chuyển đổi alias tên 3-VM sang vai trò tương đương
+if [[ "${ROLE}" == "server" || "${ROLE}" == "vm-server" ]]; then
+    ROLE="hq-gw"
+elif [[ "${ROLE}" == "client-linux" || "${ROLE}" == "vm-client-linux" ]]; then
+    ROLE="branch-gw"
 fi
 
 echo -e "[*] Đang thực hiện kiểm tra từ vai trò: ${YELLOW}${ROLE}${NC}\n"
