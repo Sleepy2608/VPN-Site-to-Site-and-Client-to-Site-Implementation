@@ -33,13 +33,13 @@
 
 ---
 
-### SLIDE 3: KIẾN TRÚC MÔ HÌNH MẠNG PHÒNG LAB (NETWORK TOPOLOGY)
-- **Hình ảnh trọng tâm:** Chèn sơ đồ Mermaid kiến trúc mạng 3 dải mạng.
-- **Các phân vùng mạng:**
-  - **Trụ sở chính HQ (`192.168.10.0/24`):** HQ Gateway (`172.16.1.10`) + HQ Internal Server (`192.168.10.50`).
-  - **Chi nhánh Branch (`192.168.20.0/24`):** Branch Gateway (`172.16.1.20`) + Branch PC (`192.168.20.50`).
-  - **Mạng WAN công cộng (`172.16.1.0/24`):** Môi trường kết nối trung gian không tin cậy.
-  - **Nhân viên từ xa Remote PC (`172.16.1.100`):** Máy trạm ngoài Internet được cấp IP ảo `10.8.0.2`.
+### SLIDE 3: KIẾN TRÚC MÔ HÌNH MẠNG PHÒNG LAB (3-VM TOPOLOGY)
+- **Hình ảnh trọng tâm:** Sơ đồ kiến trúc mạng 3 Máy tinh gọn:
+  - **1. Máy chủ VM-SERVER (Ubuntu Server 22.04 - WAN: 172.16.1.10 / LAN: 192.168.10.1):** Hợp nhất VPN Gateway (C2S/S2S), PKI CA, Web Portal Nginx và File Benchmark 1 MB.
+  - **2. Máy khách Linux VM-CLIENT-LINUX (Ubuntu Server 22.04 - WAN: 172.16.1.20 / LAN: 192.168.20.1):** Đóng vai trò Cổng Chi nhánh (S2S) kiêm Client Linux kết nối C2S.
+  - **3. Máy khách Windows CLIENT-WINDOWS (Windows Host - WAN: 172.16.1.100):** Đóng vai trò Remote Worker nhận VPN IP `10.8.0.3`, điều khiển toàn diện qua tiện ích `quick-setup.bat`.
+  - **Mạng WAN Giả lập (172.16.1.0/24):** Môi trường kết nối công cộng trung gian.
+- **Ưu điểm kiến trúc:** Giảm 60% tải RAM (chỉ tốn ~2 GB RAM), dễ dàng triển khai thực nghiệm mượt mà trên mọi laptop sinh viên.
 
 ---
 
@@ -66,7 +66,7 @@
 ---
 
 ### SLIDE 6: ỨNG DỤNG MÔ PHỎNG NỘI BỘ — HQ INTRANET SECURE PORTAL
-- **Hình ảnh trọng tâm:** Ảnh chụp giao diện Cổng nội bộ `http://192.168.10.50`.
+- **Hình ảnh trọng tâm:** Ảnh chụp giao diện Cổng nội bộ `http://10.8.0.1` (hoặc `http://192.168.10.1`).
 - **Đặc điểm giao diện:**
   - Thiết kế phong cách Cyber Security Enterprise màu xanh neon và đen.
   - **Widget Network Identity Inspector:** Tự động nhận diện và hiển thị IP nguồn của Client (phân loại rõ ràng: IP VPN an toàn vs IP ngoài bị cảnh báo).

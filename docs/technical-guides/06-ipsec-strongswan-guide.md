@@ -4,6 +4,13 @@
 > **Tài liệu:** `docs/technical-guides/06-ipsec-strongswan-guide.md`  
 > **Giai đoạn:** Giai đoạn 6 - Triển khai mở rộng IPsec IKEv2 bằng strongSwan  
 
+> [!NOTE]
+> **Tương thích Mô hình 3 Máy Ảo (Tối ưu hóa Lab cá nhân):**
+> Trong mô hình 3 máy ảo:
+> - **HQ Gateway** được đóng vai bởi **VM-SERVER** (Ubuntu 22.04, WAN `172.16.1.10`, Subnet nội bộ `192.168.10.0/24`).
+> - **Branch Gateway** được đóng vai bởi **VM-CLIENT-LINUX** (Ubuntu 22.04, WAN `172.16.1.20`, Subnet nội bộ `192.168.20.0/24`).
+> Toàn bộ thông số cấu hình IPsec, PSK và chính sách kernel XFRM hoạt động hoàn toàn tương đồng 100%.
+
 ---
 
 ## 1. Tổng Quan Kiến Trúc IPsec & So Sánh Đối Chiếu Với OpenVPN

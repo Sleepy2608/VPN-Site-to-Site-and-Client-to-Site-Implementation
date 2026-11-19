@@ -25,7 +25,8 @@ Trong bối cảnh chuyển đổi số và xu hướng làm việc linh hoạt 
    - **Mô hình 1: Client-to-Site (Remote Access VPN):** Sử dụng OpenVPN phục vụ nhân viên lưu động (`172.16.1.100`) kết nối an toàn vào mạng Trụ sở HQ (`192.168.10.0/24`).
    - **Mô hình 2: Site-to-Site (LAN-to-LAN VPN):** Kết nối mạng LAN Trụ sở HQ (`192.168.10.0/24`) và Văn phòng Chi nhánh (`192.168.20.0/24`) thông qua cặp Gateway định tuyến, triển khai trên cả hai công nghệ: **OpenVPN Routed Tunnel** và **strongSwan IPsec IKEv2**.
 2. **Xây dựng ứng dụng dịch vụ nội bộ (HQ Secure Intranet Portal):**
-   - Đặt tại máy chủ `VM-HQ-Server` (`192.168.10.50`), nằm sâu trong phân vùng mạng nội bộ được cô lập hoàn toàn (`HQ-LAN-Net`).
+   - **Trong mô hình 3 Máy (Khuyến nghị chuẩn):** Tích hợp trực tiếp trên `VM-SERVER` (`172.16.1.10`), bảo vệ dịch vụ trên IP nội bộ `192.168.10.1` và VPN Tunnel IP `10.8.0.1`.
+   - **Trong mô hình 5 Máy (Mở rộng):** Đặt tại máy chủ riêng biệt `VM-HQ-Server` (`192.168.10.50`), nằm sâu trong phân vùng mạng nội bộ được cô lập hoàn toàn (`HQ-LAN-Net`).
    - Cung cấp giao diện trực quan giám sát kết nối (Network Identity Inspector) và kho tài liệu bảo mật để đo kiểm thông lượng.
 3. **Đo kiểm thực nghiệm & Phân tích an ninh:**
    - Bắt gói tin Wireshark so sánh lưu lượng bản rõ tại LAN và lưu lượng đã được đóng gói mã hóa tại WAN.
@@ -33,7 +34,7 @@ Trong bối cảnh chuyển đổi số và xu hướng làm việc linh hoạt 
 
 ---
 
-## 3. Vai Trò Của Máy Chủ Nội Bộ HQ (`192.168.10.50`)
+## 3. Vai Trò Của Máy Chủ Nội Bộ HQ (Mục Tiêu Bảo Vệ Cốt Lõi)
 
 Máy chủ Web nội bộ đóng vai trò là "mục tiêu bảo vệ cốt lõi" của toàn bộ hệ thống:
 
@@ -44,17 +45,17 @@ flowchart LR
         REMOTE_USER["Remote Worker Laptop\n(172.16.1.100)"]
     end
 
-    subgraph SECURE_GATEWAY ["Vùng Biên Giới Bảo Vệ"]
-        HQ_GW["HQ VPN Gateway (VM-HQ-GW)\nWAN: 172.16.1.10\nLAN: 192.168.10.1\n[Firewall & OpenVPN Service]"]
+    subgraph SECURE_GATEWAY ["Vùng Biên Giới Bảo Vệ & Máy Chủ VPN"]
+        HQ_GW["VM-SERVER / HQ-GW\nWAN: 172.16.1.10\nLAN: 192.168.10.1\n[Firewall & OpenVPN Service]"]
     end
 
-    subgraph ISOLATED_LAN ["Vùng Nội Bộ Tin Cậy (HQ-LAN-Net)"]
-        HQ_SRV["HQ Internal Web Portal\n(VM-HQ-Server: 192.168.10.50)\n[Chỉ lắng nghe trong LAN]"]
+    subgraph ISOLATED_LAN ["Vùng Nội Bộ Tin Cậy"]
+        HQ_SRV["HQ Internal Web Portal\n(LAN: 192.168.10.1 / 192.168.10.50)\n[Chỉ cho phép qua VPN / LAN]"]
     end
 
-    ATTACKER -.->|"Bị chặn truy cập trực tiếp\n(Không có route ra WAN)"| HQ_SRV
+    ATTACKER -.->|"Bị chặn truy cập trực tiếp\n(Tường lửa drop traffic WAN)"| HQ_SRV
     REMOTE_USER ==>|"Đường hầm mã hóa OpenVPN\n(UDP 1194 - AES-256-GCM)"| HQ_GW
-    HQ_GW -->|"Giải mã & Chuyển tiếp LAN"| HQ_SRV
+    HQ_GW -->|"Giải mã & Chuyển tiếp Nội bộ"| HQ_SRV
 ```
 
 ### Nguyên tắc bảo vệ mạng 2 trạng thái:

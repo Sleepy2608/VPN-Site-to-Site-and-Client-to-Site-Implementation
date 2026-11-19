@@ -103,9 +103,15 @@ Phân biệt rõ ràng giữa hai loại chứng chỉ để kích hoạt đúng
 
 * **Chứng chỉ máy khách (Client Certificates):** Cờ `TLS Web Client Authentication`:
   ```bash
-  # Ký cho Remote Worker Client (client1)
+  # Ký cho Remote Worker Client Windows (client-windows / client1)
+  ./easyrsa --batch gen-req client-windows nopass
+  ./easyrsa --batch sign-req client client-windows
   ./easyrsa --batch gen-req client1 nopass
   ./easyrsa --batch sign-req client client1
+
+  # Ký cho Client Linux (client-linux)
+  ./easyrsa --batch gen-req client-linux nopass
+  ./easyrsa --batch sign-req client client-linux
 
   # Ký cho Branch Gateway Endpoint (branch-gw)
   ./easyrsa --batch gen-req branch-gw nopass

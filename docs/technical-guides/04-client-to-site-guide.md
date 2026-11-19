@@ -58,6 +58,8 @@ Tệp cấu hình máy chủ được lưu tại `openvpn/client-to-site/server/
 | `crl-verify` | `crl.pem` | Kiểm tra danh sách thu hồi chứng chỉ số trong mỗi phiên bắt tay TLS |
 | `server` | `10.8.0.0 255.255.255.0` | Cấu hình DHCP ảo: Server nhận `10.8.0.1`, các client nhận từ `10.8.0.2` trở đi |
 | `topology` | `subnet` | Mô hình phân bổ mạng con hiện đại, mỗi client nhận 1 địa chỉ IP duy nhất |
+| `client-to-client` | — | Cho phép các máy khách VPN giao tiếp trực tiếp với nhau qua đường hầm (Linux <=> Windows) |
+| `client-config-dir` | `/etc/openvpn/server/ccd-c2s` | Thư mục CCD cấp IP tĩnh cố định: `client-linux` (`10.8.0.2`), `client-windows` (`10.8.0.3`) |
 | `push "route ..."` | `192.168.10.0 255.255.255.0` | Tự động thêm route vào bảng định tuyến của client trỏ vào mạng HQ LAN |
 | `cipher` | `AES-256-GCM` | Thuật toán mã hóa đối xứng xác thực (AEAD), tốc độ cao và an toàn tuyệt đối |
 | `auth` | `SHA256` | Hàm băm bảo đảm tính toàn vẹn dữ liệu |

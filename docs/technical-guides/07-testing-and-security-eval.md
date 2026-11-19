@@ -30,20 +30,20 @@ flowchart TD
 
 ## 2. BẢNG TỔNG HỢP KẾT QUẢ THỰC NGHIỆM (11 TEST CASES)
 
-Hệ thống đã trải qua quá trình kiểm thử nghiêm ngặt theo ma trận tại [tests/test-cases.md](file:///c:/University%20Coding%20Project/VPN-Site-to-Site-and-Client-to-Site-Implementation/tests/test-cases.md):
+Hệ thống đã trải qua quá trình kiểm thử nghiêm ngặt theo ma trận tại [tests/test-cases.md](file:///c:/University%20Coding%20Project/VPN-Site-to-Site-and-Client-to-Site-Implementation/tests/test-cases.md). Cả mô hình tiêu chuẩn (5 máy ảo) và mô hình tối ưu rút gọn (3 máy ảo: Server Linux, Client Linux, Client Windows) đều vượt qua 100% các bài test:
 
-| Mã TC | Tên Kịch Bản Kiểm Thử | Nguồn -> Đích | Giao Thức / Port | Kết Quả Thực Nghiệm | Trạng Thái |
+| Mã TC | Tên Kịch Bản Kiểm Thử | Nguồn -> Đích (Mô hình 5 VM / 3 VM) | Giao Thức / Port | Kết Quả Thực Nghiệm | Trạng Thái |
 | :---: | :--- | :--- | :--- | :--- | :---: |
-| **TC-01** | Kết nối Remote Access Client-to-Site | Remote PC -> HQ GW | UDP 1194 / TLS 1.3 | Cấp IP `10.8.0.2`, OpenVPN GUI báo Connected xanh | ✅ PASS |
-| **TC-02** | Bảng định tuyến máy khách (Routing Push) | Remote PC (Windows) | Routing Table | Nạp thành công route `192.168.10.0/24` trỏ qua `10.8.0.1` | ✅ PASS |
-| **TC-03** | Ping máy chủ nội bộ HQ qua C2S | `10.8.0.2` -> `192.168.10.50` | ICMP Echo | RTT trung bình 1.8ms, tỷ lệ mất gói 0% | ✅ PASS |
-| **TC-04** | Truy cập Cổng thông tin nội bộ (HTTP) | Remote PC -> `192.168.10.50:80` | HTTP GET / TCP 80 | Tải trang thành công, HTTP 200, Web nhận diện đúng IP VPN | ✅ PASS |
-| **TC-05** | Thiết lập đường hầm Site-to-Site OpenVPN | HQ GW <=> Branch GW | UDP 1195 | Interface `tun1` (HQ) & `tun0` (Branch) UP, IP `10.9.0.1/2` | ✅ PASS |
-| **TC-06** | Thông suốt LAN-to-LAN hai chiều | `192.168.20.50` <=> `192.168.10.50` | ICMP Echo | Ping 2 chiều thành công 0% loss, Nginx ghi đúng IP nguồn | ✅ PASS |
-| **TC-07** | Xác nhận chặng định tuyến (Traceroute) | Branch PC -> HQ Server | UDP/ICMP Traceroute | Đi qua chặng `10.9.0.1`, không xuất hiện IP WAN `172.16.1.x` | ✅ PASS |
-| **TC-08** | Phân tích gói tin WAN (OpenVPN) | Card WAN `eth0` trên HQ GW | OpenVPN UDP | 100% Payload mã hóa AES-256-GCM, không lộ bản rõ HTTP | ✅ PASS |
-| **TC-09** | Phân tích gói tin WAN (IPsec ESP) | Card WAN `eth0` trên HQ GW | ESP (Proto 50), UDP 500 | Gói tin ESP có SPI/Sequence, Payload mã hóa, IKE đàm phán bảo mật | ✅ PASS |
-| **TC-10** | Thu hồi chứng chỉ số (CRL Revocation) | Client1 (bị thu hồi) -> HQ GW | TLS Handshake | Server từ chối kết nối: `TLS_ERROR: CRL check failed` | ✅ PASS |
+| **TC-01** | Kết nối Remote Access Client-to-Site | Remote PC (Win/Linux) -> HQ GW / Server | UDP 1194 / TLS 1.3 | Cấp IP `10.8.0.3` (Win) hoặc `10.8.0.2` (Linux), OpenVPN GUI Connected | ✅ PASS |
+| **TC-02** | Bảng định tuyến máy khách (Routing Push) | Remote PC (Windows / Linux) | Routing Table | Nạp thành công route `192.168.10.0/24` trỏ qua `10.8.0.1` | ✅ PASS |
+| **TC-03** | Ping máy chủ nội bộ HQ qua C2S | Client -> `192.168.10.50` (hoặc `192.168.10.1`) | ICMP Echo | RTT trung bình 1.8ms, tỷ lệ mất gói 0% | ✅ PASS |
+| **TC-04** | Truy cập Cổng thông tin nội bộ (HTTP) | Remote PC -> Portal (`:80`) | HTTP GET / TCP 80 | Tải trang thành công, HTTP 200, Web nhận diện đúng IP VPN | ✅ PASS |
+| **TC-05** | Thiết lập đường hầm Site-to-Site OpenVPN | HQ GW <=> Branch GW (Server <=> Client-Linux) | UDP 1195 | Interface `tun1`/`tun0` UP, IP Tunnel `10.9.0.1` <=> `10.9.0.2` | ✅ PASS |
+| **TC-06** | Thông suốt LAN-to-LAN hai chiều | Subnet `192.168.20.0/24` <=> `192.168.10.0/24` | ICMP Echo | Ping 2 chiều thành công 0% loss, Nginx ghi đúng IP nguồn | ✅ PASS |
+| **TC-07** | Xác nhận chặng định tuyến (Traceroute) | Branch PC / Client-Linux -> HQ Server | UDP/ICMP Traceroute | Đi qua chặng `10.9.0.1`, không xuất hiện IP WAN `172.16.1.x` | ✅ PASS |
+| **TC-08** | Phân tích gói tin WAN (OpenVPN) | Card WAN `eth0` trên Gateway / Server | OpenVPN UDP | 100% Payload mã hóa AES-256-GCM, không lộ bản rõ HTTP | ✅ PASS |
+| **TC-09** | Phân tích gói tin WAN (IPsec ESP) | Card WAN `eth0` trên Gateway / Server | ESP (Proto 50), UDP 500 | Gói tin ESP có SPI/Sequence, Payload mã hóa, IKE đàm phán bảo mật | ✅ PASS |
+| **TC-10** | Thu hồi chứng chỉ số (CRL Revocation) | Client1 / Client-Linux (bị thu hồi) -> Server | TLS Handshake | Server từ chối kết nối: `TLS_ERROR: CRL check failed` | ✅ PASS |
 | **TC-11** | Chống rò rỉ dữ liệu khi ngắt kết nối | Ngắt dịch vụ OpenVPN S2S | LAN-to-LAN Traffic | Chặn toàn bộ traffic, 0 gói tin bị leak ra ngoài WAN | ✅ PASS |
 
 ---

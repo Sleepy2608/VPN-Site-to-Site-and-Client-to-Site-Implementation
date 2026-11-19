@@ -9,8 +9,9 @@
 ## 1. Tổng Quan Kiến Trúc Mô Hình Site-to-Site (LAN-to-LAN)
 
 Mô hình **Site-to-Site VPN** cho phép liên kết hai hoặc nhiều mạng cục bộ (LAN) tại các vị trí địa lý khác nhau (Trụ sở chính HQ và Văn phòng Chi nhánh Branch Office) thành một mạng logic duy nhất thông qua cặp VPN Gateway:
-- **Đặc điểm nổi bật:** Toàn bộ quá trình mã hóa, giải mã và định tuyến được thực hiện tập trung tại 2 Gateway (`VM-HQ-GW` và `VM-Branch-GW`).
-- **Trong suốt với người dùng cuối (Transparency):** Các máy trạm tại hai bên (`192.168.10.50` và `192.168.20.50`) **hoàn toàn không cần cài đặt bất kỳ phần mềm VPN nào**; chúng giao tiếp với nhau như thể đang nằm trong cùng một mạng diện rộng riêng (WAN/MPLS nội bộ).
+- **Đặc điểm nổi bật:** Toàn bộ quá trình mã hóa, giải mã và định tuyến được thực hiện tập trung tại 2 Gateway (`VM-SERVER` và `VM-CLIENT-LINUX` trong mô hình 3 Máy, hoặc `VM-HQ-GW` và `VM-Branch-GW` trong mô hình 5 Máy).
+- **Trong suốt với người dùng cuối (Transparency):** Các máy trạm tại hai bên **hoàn toàn không cần cài đặt bất kỳ phần mềm VPN nào**; chúng giao tiếp với nhau như thể đang nằm trong cùng một mạng diện rộng riêng (WAN/MPLS nội bộ).
+- **Khả năng kết hợp Client-to-Client:** Khi kích hoạt chỉ thị `client-to-client` trên Server, các máy khách Remote Worker (Windows) và Chi nhánh (Linux) có thể ping và trao đổi dữ liệu trực tiếp qua đường hầm bảo mật.
 
 ```mermaid
 flowchart TD
