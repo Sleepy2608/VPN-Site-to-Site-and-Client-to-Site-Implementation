@@ -8,10 +8,12 @@
 # ==============================================================================
 
 set -euo pipefail
+umask 077
 
-CA_DIR="${1:-${HOME}/openvpn-ca}"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
+source "${REPO_ROOT}/scripts/common/pki-paths.sh"
+CA_DIR="${1:-${CA_DIR}}"
 
 echo "=============================================================================="
 echo " KHỞI TẠO HẠ TẦNG KHÓA CÔNG KHAI PKI (EASY-RSA 3)"
@@ -37,7 +39,8 @@ cd "${CA_DIR}"
 VARS_SRC="${REPO_ROOT}/openvpn/pki/vars.example"
 if [[ -f "${VARS_SRC}" ]]; then
     echo "[*] Sao chép cấu hình vars từ repository..."
-    cp "${VARS_SRC}" "${CA_DIR}/vars"
+    # Windows transfers can preserve CRLF; vars is sourced as a shell file.
+    sed 's/\r$//' "${VARS_SRC}" > "${CA_DIR}/vars"
 else
     echo "[*] Tạo tệp vars cấu hình mặc định..."
     cat << 'EOF' > "${CA_DIR}/vars"

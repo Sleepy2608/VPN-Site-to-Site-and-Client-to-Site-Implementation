@@ -18,7 +18,7 @@ fi
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 PORTAL_SRC="${REPO_ROOT}/services/intranet-portal"
-WEB_ROOT="/var/www/html"
+WEB_ROOT="/var/www/vpn-lab-portal"
 
 echo "=============================================================================="
 echo " TRIỂN KHAI HQ SECURE INTRANET PORTAL (VM-HQ-SERVER: 192.168.10.50)"
@@ -34,7 +34,7 @@ fi
 # 2. Xóa các tệp mặc định của Nginx và sao chép mã nguồn Cổng nội bộ
 echo "[*] Đồng bộ mã nguồn Cổng thông tin nội bộ vào ${WEB_ROOT}..."
 mkdir -p "${WEB_ROOT}"
-rm -rf "${WEB_ROOT:?}"/*
+
 
 if [[ -d "${PORTAL_SRC}" ]]; then
     cp -r "${PORTAL_SRC}"/* "${WEB_ROOT}/"
@@ -49,17 +49,18 @@ NGINX_CONF="/etc/nginx/sites-available/hq-portal"
 echo "[*] Thiết lập cấu hình Nginx Virtual Host tại ${NGINX_CONF}..."
 cat << 'EOF' > "${NGINX_CONF}"
 server {
-    listen 80 default_server;
-    listen [::]:80 default_server;
+    listen 192.168.10.50:80;
+    listen 127.0.0.1:80;
 
     server_name portal.corp.vpn.internal 192.168.10.50 localhost;
-    root /var/www/html;
+    root /var/www/vpn-lab-portal;
     index index.html;
 
     # Cung cấp endpoint API trả về địa chỉ IP nguồn của client
-    location /api/identity {
+    location = /api/identity {
+        add_header Cache-Control "no-store" always;
         default_type application/json;
-        return 200 '{"ip":"$remote_addr","server_time":"$time_iso8601","status":"secured"}';
+        return 200 '{"ip":"$remote_addr","server_time":"$time_iso8601","status":"observed"}';
     }
 
     # Phục vụ tệp tĩnh và tải tệp tài liệu kiểm thử
@@ -87,7 +88,7 @@ systemctl restart nginx
 # 5. Kiểm tra kết nối cục bộ
 sleep 1
 echo "[*] Kiểm tra phản hồi HTTP nội bộ..."
-HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://localhost/ || echo "000")
+HTTP_STATUS=$(curl --noproxy '*' --connect-timeout 3 --max-time 5 -s -o /dev/null -w "%{http_code}" http://localhost/ || echo "000")
 
 if [[ "${HTTP_STATUS}" == "200" ]]; then
     echo "[SUCCESS] Cổng thông tin nội bộ HQ Intranet Portal đã sẵn sàng!"

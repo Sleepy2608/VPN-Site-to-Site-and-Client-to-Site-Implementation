@@ -2,6 +2,8 @@
 
 Tài liệu này cung cấp hướng dẫn chuyên sâu về **phương pháp bắt gói tin, phân tích cấu trúc Header và đối chứng mật mã** giữa dữ liệu bản rõ (Cleartext) và dữ liệu được mã hóa qua đường hầm OpenVPN và IPsec strongSwan trong đồ án An ninh mạng.
 
+> Các Frame/SPI/IP dưới đây là ví dụ minh họa cấu trúc, không phải bằng chứng đã bắt trên VM. Thu PCAP thật theo [checklist](../openvpn-demo.md), đối chiếu log cipher và lưu traffic thử tương ứng.
+
 ---
 
 ## 1. PHƯƠNG PHÁP BẮT GÓI TIN ĐỐI CHỨNG (DUAL-INTERFACE CAPTURE METHODOLOGY)
@@ -22,7 +24,7 @@ flowchart LR
     E1 <--> LAN_NET["Mạng LAN HQ 192.168.10.0/24\n(VM-HQ-Server 192.168.10.50)"]
 ```
 
-- **Điểm bắt 1 - Card WAN (`eth0`):** Đại diện cho môi trường Internet công cộng, nơi kẻ tấn công (Sniffer/Man-in-the-Middle) có thể bắt trộm toàn bộ lưu lượng. Toàn bộ gói tin tại đây **bắt buộc phải được mã hóa 100%**.
+- **Điểm bắt 1 - Card WAN (`eth0`):** Đại diện cho môi trường Internet công cộng, nơi kẻ tấn công (Sniffer/Man-in-the-Middle) có thể bắt trộm toàn bộ lưu lượng. Lưu lượng nội bộ được bảo vệ phải nằm trong VPN; ARP, SSH quản trị hoặc ping WAN chủ đích có thể vẫn là bản rõ.
 - **Điểm bắt 2 - Card LAN (`eth1`):** Đại diện cho mạng nội bộ an toàn sau khi gói tin đã được VPN Gateway bóc tách header và giải mã thành công, chuẩn bị chuyển tiếp tới máy chủ đích.
 
 ---
@@ -64,7 +66,7 @@ Khi gói tin trên đi qua đường hầm OpenVPN, toàn bộ IP packet gốc (
 +--------------------------------------------------------------------------+
 | Outer IP Header: Src=172.16.1.20, Dst=172.16.1.10 (20 bytes)             |
 +--------------------------------------------------------------------------+
-| Outer UDP Header: Src Port=1195, Dst Port=1195 (8 bytes)                 |
+| Outer UDP Header: Src Port=ephemeral, Dst Port=1195 (8 bytes)                 |
 +--------------------------------------------------------------------------+
 | OpenVPN Header: Opcode (P_DATA_V2) + Peer-ID (3 bytes)                   |
 +--------------------------------------------------------------------------+
@@ -132,7 +134,7 @@ IPsec hoạt động ở Tầng Mạng (Network Layer 3) với 2 giai đoạn t�
 |    [Original TCP/HTTP Data]                                              |
 |    [Padding Bytes (0-255 bytes) + Pad Length (1 byte) + Next Header (1B)]|
 +--------------------------------------------------------------------------+
-| ICV (Integrity Check Value): Chữ ký kiểm tra toàn vẹn (16 bytes)         |
+| ICV (Integrity Check Value): Thẻ xác thực GCM (16 bytes)         |
 +--------------------------------------------------------------------------+
 ```
 
@@ -163,7 +165,7 @@ Encapsulating Security Payload
 | **Tầng mạng hoạt động** | Tầng ứng dụng / Tầng 4 | Tầng ứng dụng (Userspace daemon) | Tầng mạng (Linux Kernel XFRM) |
 | **Thuật toán mã hóa** | Không có (Plaintext) | AES-256-GCM (AEAD) | AES-256-GCM (AEAD) |
 | **Header Overhead** | 0 bytes | ~44 - 68 bytes | ~50 - 58 bytes |
-| **Độ trễ xử lý (CPU)** | 0% | Trung bình (chuyển đổi context Userspace-Kernel qua `/dev/net/tun`) | Rất thấp (Xử lý trực tiếp trong nhân Linux) |
+| **Hiệu năng** | Cần đo baseline | Cần đo với DCO bật/tắt được ghi rõ | Cần đo trên cùng tài nguyên VM |
 | **Khả năng xuyên NAT/Tường lửa**| Chuẩn | Rất tốt (chạy trên 1 port UDP tùy chọn) | Cần mở Protocol 50 hoặc NAT-T (UDP 4500) |
 | **Bảo mật Header IP gốc** | Lộ 100% | Được mã hóa bên trong payload UDP | Được mã hóa bên trong ESP Tunnel |
 
@@ -181,11 +183,11 @@ Khi mở file `.pcap` hoặc bắt gói trực tiếp trong buổi thuyết minh
    ```wireshark
    esp || isakmp || udp.port == 500 || udp.port == 4500
    ```
-3. **Bộ lọc "Chứng minh an toàn" (Kiểm tra rò rỉ bản rõ trên WAN `eth0`):**
+3. **Bộ lọc quan sát bản rõ (Kiểm tra rò rỉ bản rõ trên WAN `eth0`):**
    ```wireshark
    (http || icmp) && ip.addr == 192.168.10.50
    ```
-   *Kết quả mong đợi:* **0 gói tin** xuất hiện trên card `eth0`.
+   *Kỳ vọng cho traffic thử:* không có bản rõ tương ứng trên WAN. 0 packet đơn lẻ chưa chứng minh an toàn: phải xác nhận capture/filter, phát traffic và đối chiếu log/counter. Với IPsec, có thể cần máy quan sát WAN riêng để tránh nhầm gói đã giải mã trong host.
 4. **Bộ lọc giải mã đối chứng trên card LAN `eth1`:**
    ```wireshark
    http.request.method == "GET" || icmp.type == 8

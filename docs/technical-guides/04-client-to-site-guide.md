@@ -1,4 +1,6 @@
-# TÀI LIỆU KỸ THUẬT: TRIỂN KHAI OPENVPN CLIENT-TO-SITE (REMOTE ACCESS)
+# OPENVPN CLIENT-TO-SITE: ARMBIAN SERVER VÀ WINDOWS CLIENT
+
+> Demo hiện tại chỉ dùng OpenVPN C2S/S2S. Thực hiện [quy trình triển khai trong README](../../README.md) và [kịch bản 6–8 phút](../presentation/demo-script.md); nội dung chi tiết bên dưới là tài liệu tham khảo.
 
 > **Dự án:** Thiết lập mạng riêng ảo VPN Site-to-Site và Client-to-Site  
 > **Tài liệu:** `docs/technical-guides/04-client-to-site-guide.md`  
@@ -20,7 +22,7 @@ sequenceDiagram
     participant HQ_SRV as HQ Internal Server (192.168.10.50)
 
     Note over User,HQ_GW: Giai đoạn 1: Bắt tay TLS & Xác thực định danh X.509
-    User->>OVPN_CLI: Nhấn "Connect" trên OpenVPN GUI
+    User->>OVPN_CLI: Connect trong OpenVPN GUI trên Windows
     OVPN_CLI->>WAN: Gói tin TLS Client Hello (UDP 1194 + TLS-Crypt Header)
     WAN->>HQ_GW: Chuyển tiếp tới cổng 1194 trên card eth0
     HQ_GW->>HQ_GW: Giải mã TLS-Crypt bằng ta.key -> Xác thực chứng chỉ client1.crt đối chiếu ca.crt & crl.pem
@@ -59,8 +61,8 @@ Tệp cấu hình máy chủ được lưu tại `openvpn/client-to-site/server/
 | `server` | `10.8.0.0 255.255.255.0` | Cấu hình DHCP ảo: Server nhận `10.8.0.1`, các client nhận từ `10.8.0.2` trở đi |
 | `topology` | `subnet` | Mô hình phân bổ mạng con hiện đại, mỗi client nhận 1 địa chỉ IP duy nhất |
 | `push "route ..."` | `192.168.10.0 255.255.255.0` | Tự động thêm route vào bảng định tuyến của client trỏ vào mạng HQ LAN |
-| `cipher` | `AES-256-GCM` | Thuật toán mã hóa đối xứng xác thực (AEAD), tốc độ cao và an toàn tuyệt đối |
-| `auth` | `SHA256` | Hàm băm bảo đảm tính toàn vẹn dữ liệu |
+| `data-ciphers` | `AES-256-GCM` | Thuật toán mã hóa đối xứng xác thực (AEAD), tốc độ cao và được phép thương lượng trong lab |
+| `auth` | `SHA256` | Với AES-GCM, tính toàn vẹn data channel do AEAD tag cung cấp |
 | `user`, `group` | `nobody`, `nogroup` | Hạ quyền đặc quyền của tiến trình OpenVPN sau khi khởi tạo socket |
 | `persist-key`, `persist-tun` | (Bật) | Giữ nguyên trạng thái tunnel và key khi khởi động lại dịch vụ hoặc rớt mạng ngắn |
 
@@ -68,28 +70,14 @@ Tệp cấu hình máy chủ được lưu tại `openvpn/client-to-site/server/
 
 ## 3. Cơ Chế Định Tuyến & Thiết Lập Tường Lửa (Firewall & NAT)
 
-Để lưu lượng từ dải IP ảo `10.8.0.0/24` có thể đi vào và phản hồi từ mạng LAN Trụ sở `192.168.10.0/24`, các quy tắc sau bắt buộc phải có trên `VM-HQ-GW`:
+C2S dùng NAT từ `10.8.0.0/24` vào HQ LAN, chỉ cho phép luồng client khởi tạo và lưu lượng phản hồi. Áp dụng cùng chính sách như các script deploy:
 
 ```bash
-# 1. Bật chuyển tiếp gói tin IPv4
-sudo sysctl -w net.ipv4.ip_forward=1
-
-# 2. Cho phép chuyển tiếp gói tin giữa interface ảo tun0 và card mạng LAN eth1
-sudo iptables -A FORWARD -i tun0 -o eth1 -j ACCEPT
-sudo iptables -A FORWARD -i eth1 -o tun0 -m state --state RELATED,ESTABLISHED -j ACCEPT
-
-# 3. Kích hoạt NAT Masquerade cho dải VPN ra LAN HQ
-sudo iptables -t nat -A POSTROUTING -s 10.8.0.0/24 -o eth1 -j MASQUERADE
-
-# 4. Mở cổng UDP 1194 trên card WAN eth0
-sudo iptables -A INPUT -i eth0 -p udp --dport 1194 -j ACCEPT
-
-# 5. Kẹp giá trị TCP MSS để chống phân mảnh gói tin qua tunnel
-sudo iptables -t mangle -A FORWARD -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu
-
-# 6. Lưu vĩnh viễn quy tắc
-sudo netfilter-persistent save
+sudo bash scripts/common/enable-ip-forward.sh
+sudo bash scripts/common/setup-firewall-rules.sh hq-gw openvpn
 ```
+
+Chain `VPN_LAB_FORWARD` chặn chuyển tiếp ngoài các luồng được phép, kể cả khi FORWARD cũ đang ACCEPT. WAN → LAN/tunnel cũng bị chặn tại INPUT/OUTPUT trên gateway; SSH quản trị vẫn mở tới IP WAN từ subnet WAN lab.
 
 ---
 
@@ -98,21 +86,35 @@ sudo netfilter-persistent save
 ### 4.1. Đóng gói tệp hồ sơ cấu hình (.ovpn)
 Trên `VM-HQ-GW`, chạy script tự động để sinh file profile:
 ```bash
-bash scripts/pki/build-client-ovpn.sh client1 ~/client1.ovpn
+sudo bash scripts/pki/build-client-ovpn.sh client1 "$HOME/client1.ovpn"
 ```
 
-### 4.2. Kết nối từ máy Windows 10/11 (`VM-Remote-PC`)
-1. Cài đặt ứng dụng **OpenVPN GUI** (phiên bản mới nhất có Wintun driver).
-2. Sao chép tệp `client1.ovpn` sang máy Windows (đặt trong thư mục `C:\Users\<User>\OpenVPN\config\` hoặc kéo thả vào biểu tượng OpenVPN GUI).
-3. Nhấp chuột phải vào biểu tượng OpenVPN GUI trên thanh Taskbar -> Chọn **`client1`** -> Nhấn **Connect**.
-4. Biểu tượng chuyển sang màu **xanh lá cây** (Connected).
+### 4.2. Chuẩn bị Windows Remote-PC
 
-### 4.3. Cấu hình Windows Defender Firewall trên máy Client
-Mặc định Windows Firewall chặn gói ICMP Echo Request từ dải mạng khác. Để kiểm thử ping thành công:
-1. Mở `wf.msc` bằng quyền Administrator.
-2. Tại mục **Inbound Rules**, tìm quy tắc:  
-   `File and Printer Sharing (Echo Request - ICMPv4-In)`.
-3. Nhấp chuột phải chọn **Enable Rule**.
+Remote-PC dùng Windows 10/11 64-bit, chỉ nối WAN-Net. OpenVPN GUI hiện hỗ trợ Windows 10 trở lên; baseline lab là Windows 10 22H2 x64, khuyến nghị Windows 11 x64 còn được hỗ trợ. Xem [yêu cầu và nguồn chính thức](08-windows-client-requirements.md).
+
+1. Cài OpenVPN Community x64 kèm OpenVPN GUI, service và driver mặc định. OpenVPN 2.7 dùng DCO mặc định, không còn Wintun; không tự cài driver Wintun theo hướng dẫn cũ.
+2. Mở `ncpa.cpl` → adapter WAN-Net → IPv4: `172.16.1.100`, mask `255.255.255.0`, để trống gateway/DNS trên card lab.
+3. Chuyển `client1.ovpn` từ home của tài khoản triển khai HQ qua Shared Folder/WinSCP/SCP. Không chuyển khóa CA. Import file trong OpenVPN GUI hoặc đặt ở `%USERPROFILE%\OpenVPN\config\`.
+4. Tắt NAT phụ trước demo. Windows Remote-PC không chạy Netplan/Bash/deploy-all và không bật IP forwarding.
+
+### 4.3. Kết nối và kiểm tra trên Windows
+
+OpenVPN GUI ở system tray → chọn `client1` → **Connect**. Chờ Connected và `Initialization Sequence Completed` trong View Log, rồi mở PowerShell:
+
+```powershell
+ipconfig
+route print -4
+ping -n 3 10.8.0.1
+ping -n 3 192.168.10.50
+Test-NetConnection 192.168.10.50 -Port 80
+Invoke-WebRequest -UseBasicParsing -Method Head -Uri http://192.168.10.50 -TimeoutSec 5
+Start-Process http://192.168.10.50
+```
+
+IP client là `10.8.0.x`, không bắt buộc `.2`; tên adapter tùy driver. Route HQ phải qua adapter OpenVPN, không thay default route bằng VPN. Tài nguyên demo dùng IP trực tiếp nên không cần DNS nội bộ.
+
+Ngắt bằng OpenVPN GUI → `client1` → **Disconnect**, kiểm tra `route print -4`. Profile không tự kết nối trước buổi demo. Không chạy đồng thời nhiều client với cùng profile.
 
 ---
 
@@ -120,19 +122,10 @@ Mặc định Windows Firewall chặn gói ICMP Echo Request từ dải mạng k
 
 Chạy script kiểm tra nghiệm thu tự động trên Gateway:
 ```bash
-bash scripts/verify-c2s.sh server
+sudo bash scripts/verify-c2s.sh server
 ```
 
-### Các ca kiểm thử thực nghiệm tương ứng:
-* **TC-01 (Kết nối thành công):**
-  - Trên Windows, mở `cmd` gõ: `ipconfig` -> Tìm adapter OpenVPN, kiểm tra đã nhận IP `10.8.0.2` (Subnet `255.255.255.0`).
-* **TC-02 (Kiểm tra bảng định tuyến):**
-  - Trên Windows gõ: `route print` -> Phải thấy dòng `192.168.10.0 255.255.255.0` trỏ qua Gateway `10.8.0.1`.
-* **TC-03 (Ping máy chủ nội bộ):**
-  - Trên Windows gõ: `ping 10.8.0.1` -> Phản hồi dưới 2ms, 0% packet loss.
-  - Sau khi dựng HQ Server ở Giai đoạn 4, lệnh `ping 192.168.10.50` sẽ thông suốt.
-* **TC-04 (Kiểm tra log trạng thái):**
-  - Trên `VM-HQ-GW`, xem tệp `/var/log/openvpn/openvpn-c2s-status.log` để thấy bản ghi phiên kết nối của `client1` kèm địa chỉ IP thực tế `172.16.1.100`.
+Trên Windows Remote-PC dùng các lệnh PowerShell bên trên hoặc `quick-setup.bat`; không chạy script Bash. Đối chiếu [checklist demo](../../tests/openvpn-demo.md): IP tunnel, route HQ, ping/HTTP và status log `client1` trên HQ. C2S dùng NAT nên Portal có thể thấy IP gateway `192.168.10.1`; không dùng IP này để kết luận client là kết nối LAN trực tiếp.
 
 ---
 
@@ -143,10 +136,18 @@ bash scripts/verify-c2s.sh server
    - *Khắc phục:* Sử dụng script `build-client-ovpn.sh` để bảo đảm thẻ `<tls-crypt>` được nhúng chính xác.
 
 2. **Lỗi: `Certificate not yet valid` hoặc `Certificate expired`**
-   - *Nguyên nhân:* Đồng hồ trên máy ảo Linux và máy Windows bị lệch múi giờ hoặc lệch giây.
-   - *Khắc phục:* Đồng bộ thời gian bằng lệnh `sudo chronyc makestep` trên Ubuntu.
+   - *Nguyên nhân:* Đồng hồ thực tế giữa Windows Remote-PC và HQ-GW bị lệch, hoặc chứng chỉ đã hết hạn. Khác múi giờ hiển thị không tự gây lỗi nếu thời gian thực tế đúng.
+   - *Khắc phục:* Đồng bộ Date & time trên Windows; dùng `sudo chronyc makestep` trên HQ Armbian khi có nguồn thời gian phù hợp.
 
 3. **Lỗi: Kết nối thành công nhưng không ping được mạng LAN HQ**
    - *Nguyên nhân:* Quên chưa bật IP Forwarding hoặc thiếu quy tắc iptables NAT Masquerade.
    - *Khắc phục:* Chạy lại `sudo bash scripts/common/enable-ip-forward.sh` và `sudo bash scripts/common/setup-firewall-rules.sh hq-gw`.
+
+4. **Lỗi: OpenVPN GUI đang chạy nhưng chưa có IP VPN**
+   - *Kiểm tra:* View Log, chờ `Initialization Sequence Completed`; kiểm tra WAN `172.16.1.10`, UDP 1194, chứng chỉ và service/driver đi kèm bộ cài.
+
+5. **Lỗi: HQ không ping được Windows nhưng Windows vẫn vào Portal được**
+   - *Kiểm tra:* Rule ICMPv4 Echo Request theo đúng adapter/profile Windows Firewall. Không tắt toàn bộ firewall để thử ping.
+
+Tham khảo: [OpenVPN Community — Windows 10 trở lên](https://openvpn.net/community/), [OpenVPN GUI](https://github.com/OpenVPN/openvpn-gui).
 

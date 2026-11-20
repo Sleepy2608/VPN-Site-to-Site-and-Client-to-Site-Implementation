@@ -1,271 +1,232 @@
-# Đồ Án An Ninh Mạng: Thiết Lập Mạng Riêng Ảo VPN Site-to-Site và Client-to-Site
+# VPN Site-to-Site và Client-to-Site bằng OpenVPN
 
-> **Design and Implementation of a Secure VPN Network Using OpenVPN and IPsec for Remote Workforce Connectivity**  
-> Hệ thống phòng lab an ninh mạng mô phỏng mạng doanh nghiệp gồm Trụ sở chính (HQ Site), Văn phòng Chi nhánh (Branch Site) và Nhân viên làm việc từ xa (Remote Worker).
+**Mô hình đang triển khai: 5 máy — hai gateway, hai host LAN và Windows remote.**
 
----
+**Đã triển khai và kiểm tra trực tiếp bốn Linux ngày 20/11/2026.** S2S, Portal HQ, C2S bằng client Linux tạm, chặn route đi vòng, cô lập NAT và khôi phục sau reboot đã được kiểm tra. Windows Remote-PC do người dùng tự cấu hình. Xem **[kết quả thực tế và IP quản trị](docs/deployment/live-lab-status.md)** cùng log/PCAP đối chứng.
 
-## 👥 Thành Viên Tham Gia
+**Bắt đầu tại [bộ hướng dẫn triển khai từng máy](docs/deployment/README.md).** Bộ tài liệu có sơ đồ, bảng NIC/IP, phần chuẩn bị VMware, YAML đầy đủ kể cả NAT tạm, lệnh cài đặt, chuyển chứng chỉ, kết quả kỳ vọng và xử lý lỗi riêng từng máy:
 
-1. [Nguyen Le Huy Tam](https://github.com/Sleepy2608)
-2. [Nguyen Sun Sin](https://github.com/ngnsusinn)
-3. [Huynh Dinh Chan](https://github.com/Chan-2006)
+- [Chuẩn bị chung](docs/deployment/00-preparation.md).
+- [Máy 1 HQ-GW](docs/deployment/01-hq-gw.md) và [Máy 2 Branch-GW](docs/deployment/02-branch-gw.md).
+- [Máy 3 HQ-Server](docs/deployment/03-hq-server.md) và [Máy 4 Branch-PC](docs/deployment/04-branch-pc.md).
+- [Máy 5 Windows Remote-PC](docs/deployment/05-windows-remote.md).
+- [Nghiệm thu sau khi ngắt NAT và reboot](docs/deployment/06-acceptance.md).
 
----
+## Kết luận rà soát Chủ đề 14 (20/11/2026)
 
-## 📌 Tổng Quan Kiến Trúc Mạng
+**Bài thực hành 3 máy chỉ đáp ứng Client-to-Site, chưa đủ cả đề tài.** Hai client Linux/Windows kết nối cùng server không tạo thành Site-to-Site: chưa có hai LAN được nối qua hai gateway.
+
+**Chọn mô hình 5 máy bên dưới để triển khai và nghiệm thu đủ Site-to-Site + Client-to-Site.** Đây là phương án đã có cấu hình và script trong repo, giữ nguyên lựa chọn Armbian/Windows/VMware. OpenVPN có thể thực hiện cả hai loại VPN; IPsec là phần so sánh mở rộng, không phải điều kiện bắt buộc suy ra từ tên đề tài.
+
+| Phương án | Client-to-Site | Site-to-Site | Sử dụng |
+| --- | --- | --- | --- |
+| 3 máy: Linux Server + Linux Client + Windows Client | Có, web ở `10.8.0.1` | Chưa có hai LAN/gateway | Bài thực hành C2S riêng |
+| 5 máy: HQ-GW + Branch-GW + HQ-Server + Branch-PC + Remote-PC | OpenVPN UDP 1194 | OpenVPN UDP 1195, hai LAN định tuyến | **Phương án chính để đáp ứng đủ chủ đề** |
+| 5 máy, thay OpenVPN S2S bằng strongSwan | Giữ OpenVPN C2S | IPsec IKEv2/ESP giữa hai LAN | Mở rộng sau khi phương án chính chạy đạt |
+
+Đọc [báo cáo đối chiếu yêu cầu, lỗi và phần đã bổ sung](docs/topic14-audit.md) để xem đánh giá ban đầu; kết quả VM mới nhất được ghi riêng tại [báo cáo triển khai trực tiếp](docs/deployment/live-lab-status.md). Ghi bằng chứng theo [checklist nghiệm thu](tests/openvpn-demo.md), phân biệt client Linux thử với Windows chưa nghiệm thu.
+
+- [Runbook 5 máy — triển khai và demo đầy đủ](docs/presentation/detailed-lab-runbook.md).
+- [Bài thực hành C2S 3 máy](docs/presentation/three-vm-openvpn-demo.md): giữ riêng IP/lệnh; không dùng thay cho bài Site-to-Site.
+
+Thành viên: [Nguyen Le Huy Tam](https://github.com/Sleepy2608), [Nguyen Sun Sin](https://github.com/ngnsusinn), [Huynh Dinh Chan](https://github.com/Chan-2006).
+
+## 1. Mô hình demo
 
 ```mermaid
 flowchart LR
-    subgraph HQ_SITE ["Trụ sở chính (HQ Site - 192.168.10.0/24)"]
-        HQ_Server["HQ Internal Server\n(Web / Docs Portal)\nIP: 192.168.10.50"]
-        HQ_GW["HQ VPN Gateway\n(Ubuntu Server 22.04)\nLAN: 192.168.10.1\nWAN: 172.16.1.10"]
-        HQ_Server <-->|"LAN (HQ-LAN-Net)"| HQ_GW
-    end
-
-    subgraph WAN_ENV ["Mạng WAN Giả lập (172.16.1.0/24)"]
-        WAN_SW["Virtual Switch (WAN-Net)"]
-    end
-
-    subgraph BRANCH_SITE ["Văn phòng Chi nhánh (192.168.20.0/24)"]
-        BR_GW["Branch VPN Gateway\n(Ubuntu Server 22.04)\nWAN: 172.16.1.20\nLAN: 192.168.20.1"]
-        BR_PC["Branch Client Host\nIP: 192.168.20.50"]
-        BR_GW <-->|"LAN (Branch-LAN-Net)"| BR_PC
-    end
-
-    subgraph REMOTE_WORKER ["Nhân viên làm việc từ xa"]
-        RW_PC["Remote Worker Laptop\n(Windows 10/11)\nPhysical WAN: 172.16.1.100\nAssigned VPN IP: 10.8.0.2"]
-    end
-
-    HQ_GW <-->|"eth0 (WAN)"| WAN_SW
-    WAN_SW <-->|"eth0 (WAN)"| BR_GW
-    WAN_SW <-->|"Wi-Fi / Ethernet"| RW_PC
-
-    RW_PC -.->|"Tunnel 1: OpenVPN Client-to-Site (10.8.0.0/24)\n[UDP 1194 - AES-256-GCM]"| HQ_GW
-    BR_GW -.->|"Tunnel 2: OpenVPN/IPsec Site-to-Site (10.9.0.0/24)\n[UDP 1195 / ESP Proto 50]"| HQ_GW
+    Remote["Remote-PC Windows\n172.16.1.100"] -->|"OpenVPN C2S · UDP 1194"| HQ["HQ-GW Armbian CLI\nWAN 172.16.1.10\nLAN 192.168.10.1"]
+    PC["Branch-PC Armbian GUI\n192.168.20.50"] --- Branch["Branch-GW Armbian CLI\nLAN 192.168.20.1\nWAN 172.16.1.20"]
+    Branch <-->|"OpenVPN S2S · UDP 1195"| HQ
+    HQ --- Server["HQ-Server Armbian CLI\n192.168.10.50\nNginx Portal"]
 ```
 
----
+| Nội dung | Công cụ/cấu hình |
+| --- | --- |
+| Máy ảo | 4 Armbian Generic UEFI x86_64 + 1 Windows 10/11 x64 trên VMware |
+| Backend mạng thực tế | HQ-GW dùng NetworkManager; Branch-GW, HQ-Server, Branch-PC dùng networkd |
+| Máy chi nhánh thực tế | Branch-PC dùng CLI/ping/curl để kiểm tra S2S; có thể bổ sung Desktop/browser khi cần |
+| VPN nhân viên từ xa | OpenVPN GUI trên Windows Remote-PC → HQ-GW, tunnel `10.8.0.0/24` |
+| VPN liên chi nhánh | OpenVPN Branch-GW → HQ-GW, tunnel `10.9.0.0/24` |
+| Chứng chỉ | Easy-RSA, xác thực X.509 và `tls-crypt` |
+| Tài nguyên demo | Nginx tại `http://192.168.10.50` và tệp tải mẫu 1 MiB |
+| Quan sát | Ping, route, trạng thái OpenVPN, tcpdump/Wireshark |
 
-## 📂 Cấu Trúc Thư Mục Repository
+Đây là triển khai **theo từng node bằng Bash**: tự tạo VM và mạng trước, sau đó chạy `deploy-all.sh` trên từng Armbian. Script không tạo VM, tự cài GUI hoặc tự áp dụng Netplan. Gateway Linux cần OpenVPN **2.5 trở lên** (tương thích gói Ubuntu 22.04); từ 2.6 script tắt DCO để việc quan sát `tun0`/`tun1` nhất quán. Dùng image **Generic UEFI x86_64** phù hợp VMware/host Intel–AMD, không dùng image Armbian cho board ARM. Xem [chuẩn bị Armbian trên VMware](docs/technical-guides/09-armbian-vmware-guide.md).
 
-```text
-├── .agents/                    # Quy chuẩn và hướng dẫn hệ thống cho AI Agent
-├── .plan/                      # Kế hoạch kỹ thuật chi tiết & Hướng dẫn triển khai
-├── quick-setup.bat             # Công cụ điều khiển và kiểm tra nhanh hệ thống trên Windows
-├── configs/                    # Mẫu tệp cấu hình mạng & dịch vụ Netplan
-│   └── netplan/                # Cấu hình IP tĩnh cho 4 máy ảo Ubuntu
-├── docs/                       # Hồ sơ tài liệu kỹ thuật & Thuyết trình
-│   ├── technical-guides/       # 7 tài liệu kỹ thuật chi tiết theo từng chủ đề
-│   │   ├── 01-project-overview.md  # Tổng quan đề tài & Kiến trúc bảo vệ dịch vụ nội bộ
-│   │   ├── 02-network-topology.md  # Sơ đồ mạng Lab, Bảng IP & Thiết lập mạng ảo
-│   │   ├── 03-pki-ca-setup.md      # Hạ tầng PKI độc lập Easy-RSA 3 & Quản lý chứng chỉ X.509
-│   │   ├── 04-client-to-site-guide.md # Hướng dẫn triển khai OpenVPN Client-to-Site
-│   │   ├── 05-site-to-site-guide.md   # Hướng dẫn triển khai OpenVPN Site-to-Site (CCD & iroute)
-│   │   ├── 06-ipsec-strongswan-guide.md # Mở rộng Site-to-Site strongSwan IPsec IKEv2
-│   │   └── 07-testing-and-security-eval.md # Báo cáo kiểm thử toàn diện, Wireshark & Đánh giá an ninh
-│   └── presentation/           # Tài liệu phục vụ báo cáo & bảo vệ đồ án
-│       ├── demo-script.md      # Kịch bản demo trực tiếp 10-15 phút trên máy chiếu
-│       └── slides.md           # Đề cương 18 slide thuyết trình PowerPoint / Canva
-├── openvpn/                    # Cấu hình OpenVPN C2S và S2S (CCD, template)
-│   ├── pki/                    # Cấu hình biến môi trường Easy-RSA 3 (vars.example)
-│   ├── client-to-site/         # Cấu hình Server C2S (UDP 1194) và Template Client .ovpn
-│   └── site-to-site/           # Cấu hình S2S Gateway HQ, Branch và Client Config Directory
-├── ipsec/                      # Cấu hình strongSwan IKEv2 (ipsec.conf, secrets)
-│   └── strongswan/             # Cấu hình kết nối IKEv2 phía HQ và Branch Gateway
-├── scripts/                    # Bộ công cụ Bash Script tự động hóa
-│   ├── deploy-all.sh           # Kịch bản 1-click triển khai tự động toàn bộ từng node
-│   ├── common/                 # Cài đặt phần mềm, bật IP forward và thiết lập iptables
-│   ├── pki/                    # Khởi tạo CA, đóng gói .ovpn inline và phân phối cert
-│   ├── deploy-c2s-server.sh    # Triển khai dịch vụ OpenVPN Client-to-Site Server
-│   ├── deploy-s2s-hq.sh        # Triển khai OpenVPN S2S phía HQ Gateway
-│   ├── deploy-s2s-branch.sh    # Triển khai OpenVPN S2S phía Branch Gateway
-│   ├── deploy-ipsec-hq.sh      # Triển khai strongSwan IPsec phía HQ Gateway
-│   ├── deploy-ipsec-branch.sh  # Triển khai strongSwan IPsec phía Branch Gateway
-│   ├── deploy-hq-portal.sh     # Triển khai Cổng thông tin nội bộ Nginx trên HQ Server
-│   ├── switch-vpn-mode.sh      # Chuyển đổi an toàn giữa OpenVPN và strongSwan
-│   ├── capture-traffic.sh      # Tự động hóa bắt gói tin tcpdump phục vụ Wireshark
-│   └── verify-*.sh             # Các script kiểm tra nghiệm thu tự động từng dịch vụ
-├── services/                   # Dịch vụ mô phỏng nội bộ (HQ Intranet Portal)
-│   └── intranet-portal/        # Web Portal bảo mật cao (HTML, CSS, JS, benchmark files)
-├── tests/                      # Ma trận kiểm thử & phân tích an ninh mạng
-│   ├── test-cases.md           # Ma trận 11 ca kiểm thử chức năng & an ninh
-│   ├── security-tests.md       # Quy trình test thu hồi chứng chỉ (CRL) & tấn công giả lập
-│   └── captures/               # Phân tích gói tin Wireshark & tệp pcap mẫu
-└── screenshots/                # Quy chuẩn và danh mục 12 ảnh chụp màn hình minh chứng
-```
+**Windows tối thiểu:** OpenVPN GUI hiện hành hỗ trợ Windows 10 trở lên. Baseline lab chọn **Windows 10 22H2 64-bit**; khuyến nghị **Windows 11 64-bit còn được hỗ trợ** vì Windows 10 Home/Pro đã hết hỗ trợ thông thường từ 14/10/2025. Xem [yêu cầu Windows và nguồn chính thức](docs/technical-guides/08-windows-client-requirements.md).
 
----
+## 2. Chuẩn bị một lần trước demo
 
-## 📚 Danh Mục Tài Liệu Kỹ Thuật & Kiểm Thử (Documentation & Testing Checklist)
+### Image Armbian và mạng VMware
 
-Toàn bộ hệ thống tài liệu kỹ thuật, hướng dẫn cài đặt và kịch bản kiểm thử của đồ án được biên soạn đầy đủ và phân loại chi tiết:
+Mô hình có 5 VM: 3 Armbian Minimal/CLI không GUI, 1 Armbian Desktop làm Branch-PC, 1 Windows Remote-PC. Tạo ba **LAN Segment** trên VMware:
 
-### 1. Tài Liệu Kỹ Thuật (Architecture & Guides)
-- [x] [01-project-overview.md](file:///c:/University%20Coding%20Project/VPN-Site-to-Site-and-Client-to-Site-Implementation/docs/technical-guides/01-project-overview.md): Tổng quan bài toán, mục tiêu thiết kế và kiến trúc bảo vệ dịch vụ nội bộ.
-- [x] [02-network-topology.md](file:///c:/University%20Coding%20Project/VPN-Site-to-Site-and-Client-to-Site-Implementation/docs/technical-guides/02-network-topology.md): Bản vẽ sơ đồ mạng, bảng phân bổ địa chỉ IP, thiết kế 3 mạng ảo (WAN, HQ LAN, Branch LAN).
-- [x] [03-pki-ca-setup.md](file:///c:/University%20Coding%20Project/VPN-Site-to-Site-and-Client-to-Site-Implementation/docs/technical-guides/03-pki-ca-setup.md): Hướng dẫn thiết lập CA độc lập với Easy-RSA 3, cơ chế cấp chứng chỉ X.509, Diffie-Hellman và khóa HMAC `ta.key`.
-- [x] [04-client-to-site-guide.md](file:///c:/University%20Coding%20Project/VPN-Site-to-Site-and-Client-to-Site-Implementation/docs/technical-guides/04-client-to-site-guide.md): Cấu hình OpenVPN Client-to-Site Server, cơ chế Split-Tunneling và cấu hình OpenVPN GUI trên Windows.
-- [x] [05-site-to-site-guide.md](file:///c:/University%20Coding%20Project/VPN-Site-to-Site-and-Client-to-Site-Implementation/docs/technical-guides/05-site-to-site-guide.md): Cấu hình OpenVPN Site-to-Site Routed Tunnel kết hợp Client Config Directory (CCD) và chỉ thị `iroute`.
-- [x] [06-ipsec-strongswan-guide.md](file:///c:/University%20Coding%20Project/VPN-Site-to-Site-and-Client-to-Site-Implementation/docs/technical-guides/06-ipsec-strongswan-guide.md): Triển khai mở rộng strongSwan IPsec IKEv2 In-Kernel ESP và so sánh đối chiếu với OpenVPN.
-- [x] [07-testing-and-security-eval.md](file:///c:/University%20Coding%20Project/VPN-Site-to-Site-and-Client-to-Site-Implementation/docs/technical-guides/07-testing-and-security-eval.md): Báo cáo tổng kết kiểm thử toàn diện, đo đạc độ trễ/thông lượng, đánh giá an ninh mô hình STRIDE.
+| Mạng | Subnet | Card nối vào |
+| --- | --- | --- |
+| WAN-Net | `172.16.1.0/24` | WAN HQ-GW, WAN Branch-GW, Remote-PC |
+| HQ-LAN-Net | `192.168.10.0/24` | LAN HQ-GW, HQ-Server |
+| Branch-LAN-Net | `192.168.20.0/24` | LAN Branch-GW, Branch-PC |
 
-### 2. Kiểm Thử An Ninh & Bắt Gói Tin (Testing & Verification)
-- [x] [tests/test-cases.md](file:///c:/University%20Coding%20Project/VPN-Site-to-Site-and-Client-to-Site-Implementation/tests/test-cases.md): Ma trận 11 ca kiểm thử thực nghiệm (TC-01 đến TC-11) bao gồm kết nối, định tuyến, ứng dụng, phân tích mã hóa và rò rỉ dữ liệu.
-- [x] [tests/security-tests.md](file:///c:/University%20Coding%20Project/VPN-Site-to-Site-and-Client-to-Site-Implementation/tests/security-tests.md): 6 kịch bản kiểm thử bảo mật chuyên sâu: Thu hồi chứng chỉ (CRL), giả mạo PSK, chống rò rỉ (Killswitch), quét Nmap mạng ngoài, chống DoS/Replay.
-- [x] [tests/captures/wireshark-analysis.md](file:///c:/University%20Coding%20Project/VPN-Site-to-Site-and-Client-to-Site-Implementation/tests/captures/wireshark-analysis.md): Bóc tách cấu trúc Header trên Wireshark đối chứng giữa gói tin Cleartext, OpenVPN và IPsec ESP.
-- [x] [tests/captures/samples/](file:///c:/University%20Coding%20Project/VPN-Site-to-Site-and-Client-to-Site-Implementation/tests/captures/samples/): Thư mục lưu trữ tệp `.pcap` mẫu và hướng dẫn xuất/mở bằng Wireshark.
-- [x] [screenshots/](file:///c:/University%20Coding%20Project/VPN-Site-to-Site-and-Client-to-Site-Implementation/screenshots/): Quy hoạch danh mục 12 ảnh chụp màn hình minh chứng phục vụ báo cáo và thuyết minh đồ án.
+WAN-Net chỉ đóng vai trò WAN giả lập. Cấu hình IP trong từng VM; tên LAN Segment không tự gán IP. Hai mạng tunnel OpenVPN không cần tạo virtual switch riêng. Hai gateway cần 2 NIC lab; HQ-Server và Branch-PC cần 1 NIC LAN, Windows cần 1 NIC WAN.
 
-### 3. Thuyết Trình & Kịch Bản Demo (Presentation & Defense)
-- [x] [demo-script.md](file:///c:/University%20Coding%20Project/VPN-Site-to-Site-and-Client-to-Site-Implementation/docs/presentation/demo-script.md): Kịch bản demo trực tiếp 5 màn (10 - 15 phút) trên máy chiếu có sẵn lời dẫn và câu lệnh thao tác.
-- [x] [slides.md](file:///c:/University%20Coding%20Project/VPN-Site-to-Site-and-Client-to-Site-Implementation/docs/presentation/slides.md): Đề cương chi tiết 18 Slide báo cáo PowerPoint / Canva chuẩn học thuật.
+Cài/khởi động đúng image Armbian và chép repo lên 4 Armbian VM; Windows cài OpenVPN Community x64 kèm GUI/driver và Wireshark nếu cần. Thêm NIC NAT tạm trên từng VM cần tải gói; giữ tới khi deploy xong rồi ngắt trước demo. Nếu dùng image clone, tạo MAC/hostname riêng. Đồng bộ đồng hồ để chứng chỉ hợp lệ.
 
----
+### Chuẩn bị Armbian
 
-## 🛠️ Hướng Dẫn Triển Khai Hệ Thống (System Deployment Guide)
+Mở terminal tại thư mục repo trên từng VM, cài gói khi còn Internet:
 
-Hệ thống hỗ trợ 2 phương pháp triển khai: sử dụng công cụ tự động hóa 1-click (khuyến nghị) hoặc thực hiện tuần tự theo từng node.
-
-### Phương Pháp 1: Triển Khai Nhanh Bằng Công Cụ Tự Động Hóa (Khuyến Nghị)
-
-#### 1. Trên máy khách Windows (Host / Remote PC):
-Chạy tiện ích điều khiển [quick-setup.bat](file:///c:/University%20Coding%20Project/VPN-Site-to-Site-and-Client-to-Site-Implementation/quick-setup.bat):
-```cmd
-quick-setup.bat
-```
-*Tính năng:* Menu tương tác hỗ trợ kiểm tra thông mạng (Ping), mở Web Portal nội bộ, kiểm tra bảng route split-tunnel, chạy traceroute, kết nối SSH nhanh tới các máy ảo, và đo tốc độ tải file bảo mật.
-
-#### 2. Trên các máy ảo Ubuntu Linux (HQ-GW, Branch-GW, HQ-Server, Branch-PC):
-Sử dụng script triển khai tự động toàn diện [scripts/deploy-all.sh](file:///c:/University%20Coding%20Project/VPN-Site-to-Site-and-Client-to-Site-Implementation/scripts/deploy-all.sh):
 ```bash
-# Triển khai trọn gói trên HQ Gateway (PKI CA + C2S + S2S OpenVPN + IPsec):
+# Trên cả HQ-GW và Branch-GW:
+sudo bash scripts/common/install-prerequisites.sh gw
+
+# Trên HQ-Server:
+sudo bash scripts/common/install-prerequisites.sh server
+
+# Trên Branch-PC:
+sudo bash scripts/common/install-prerequisites.sh pc
+
+```
+
+Dùng `ip -br link` và MAC trong VMware để xác định NIC WAN/LAN/NAT. Sửa khóa `eth0`/`eth1` trong mẫu Netplan thành tên thật (ví dụ `ens33`/`ens37`). Minimal thường dùng renderer `networkd`, standard CLI/Desktop có thể dùng `NetworkManager`: kiểm tra backend đang hoạt động, không suy ra từ việc có GUI. Mẫu Branch-PC đặt NetworkManager cho Armbian GUI.
+
+Trên **mỗi gateway**, khai báo NIC thực tế cho các script (ví dụ, phải sửa theo máy):
+
+```bash
+sudo install -d -m 755 /etc/vpn-lab
+sudo tee /etc/vpn-lab/interfaces.conf >/dev/null <<'EOF'
+WAN_IF=ens33
+LAN_IF=ens37
+EOF
+sudo chmod 644 /etc/vpn-lab/interfaces.conf
+```
+
+File trên không tự đặt IP. Script đọc cùng cấu hình NIC cho firewall, NAT, deploy OpenVPN, verify và capture. Nếu không có file thì vẫn mặc định eth0/eth1. Xem [hướng dẫn xử lý Netplan/DHCP mặc định của Armbian](docs/technical-guides/09-armbian-vmware-guide.md) trước khi áp dụng mẫu.
+
+Áp dụng mẫu **đã sửa NIC/renderer** trên từng VM bằng console VMware. Sao lưu và xử lý YAML/connection DHCP mặc định chồng lên NIC lab; nếu giữ NAT để deploy thì khai báo riêng NIC NAT với DHCP trong cấu hình còn lại:
+
+```bash
+# Ví dụ HQ-GW; các VM khác chọn mẫu cùng tên trong configs/netplan/:
+sudo cp configs/netplan/01-netcfg-hq-gw.yaml /etc/netplan/20-vpn-lab.yaml
+sudo chmod 600 /etc/netplan/20-vpn-lab.yaml
+sudo netplan generate
+sudo netplan try
+```
+
+Các mẫu còn lại là `01-netcfg-branch-gw.yaml`, `01-netcfg-hq-server.yaml`, `01-netcfg-branch-pc.yaml`. Trên Windows mở `ncpa.cpl`, đặt IPv4 cho card WAN-Net: IP `172.16.1.100`, subnet mask `255.255.255.0`, để trống gateway/DNS trên card lab. Windows không dùng Netplan.
+
+## 3. Triển khai bằng một quy trình
+
+Chạy từ thư mục repo trên đúng Armbian node. `deploy-all.sh` dùng apt/systemd và cần Internet để cài gói; nó dừng và tắt tự khởi động strongSwan từ lab cũ nếu có. Kiểm tra `/dev/net/tun` và unit OpenVPN trên image đã chọn theo hướng dẫn Armbian trước nghiệm thu.
+
+### Bước 1 — HQ-GW
+
+```bash
 sudo bash scripts/deploy-all.sh hq-gw
+```
 
-# Triển khai trọn gói trên Branch Gateway (S2S OpenVPN + IPsec):
+Script bật forwarding, cấu hình firewall, tạo CA/chứng chỉ, xuất `client1.ovpn` và chạy OpenVPN C2S + S2S. PKI mặc định nằm ở `~/openvpn-ca` của tài khoản gọi sudo; profile nằm ở `~/client1.ovpn` của cùng tài khoản. Có thể chỉ định `CA_DIR` nếu dùng PKI ở vị trí khác.
+
+### Bước 2 — Chuyển chứng chỉ từ HQ sang Branch
+
+Branch-GW phải bật SSH và ping được `172.16.1.10`. Chạy **trên HQ-GW**, thay `student` bằng tài khoản Armbian thật trên Branch:
+
+```bash
+sudo env BRANCH_USER=student bash scripts/pki/distribute-certs.sh branch-gw 172.16.1.20
+```
+
+Lệnh dùng SCP/SSH và có thể hỏi mật khẩu SSH/sudo. Chỉ chuyển CA công khai, cert/key của Branch và `ta.key`; không chuyển private key của CA.
+
+### Bước 3 — Branch-GW
+
+```bash
 sudo bash scripts/deploy-all.sh branch-gw
+```
 
-# Triển khai trọn gói trên HQ Internal Server (Nginx Web Portal + Benchmark files):
+### Bước 4 — HQ-Server và Branch-PC
+
+```bash
+# Trên HQ-Server:
 sudo bash scripts/deploy-all.sh hq-server
 
-# Kiểm tra kết nối từ máy trạm Chi nhánh:
+# Sau khi server và hai gateway đã sẵn sàng, trên Branch-PC:
 sudo bash scripts/deploy-all.sh branch-pc
 ```
 
----
+### Bước 5 — Windows Remote-PC
 
-### Phương Pháp 2: Triển Khai Tuần Tự Theo Từng Node (Manual Deployment)
+1. Cài **OpenVPN Community x64** từ [trang chính thức](https://openvpn.net/community/), giữ OpenVPN GUI và driver/service đi kèm. OpenVPN 2.7 không còn dùng Wintun; không cần tự chọn driver cũ.
+2. Chuyển `~/client1.ovpn` của người triển khai HQ-GW sang Windows bằng Shared Folder, WinSCP hoặc SCP. Chỉ chuyển profile client, không chuyển private key của CA.
+3. Mở OpenVPN GUI ở system tray → **Import file...** → chọn profile. Hoặc đặt file vào `%USERPROFILE%\OpenVPN\config\`.
+4. Chọn `client1` → **Connect**, chờ Connected và log `Initialization Sequence Completed`.
+5. Trên **PowerShell Windows**, chạy:
 
-#### Bước 1: Thiết lập 3 mạng ảo nội bộ trong VirtualBox / VMware
-Tạo 3 mạng ảo (Internal Networks) tương ứng:
-- `WAN-Net` (`172.16.1.0/24`)
-- `HQ-LAN-Net` (`192.168.10.0/24`)
-- `Branch-LAN-Net` (`192.168.20.0/24`)
-
-Gán card mạng cho 5 máy ảo theo bảng quy hoạch tại [02-network-topology.md](file:///c:/University%20Coding%20Project/VPN-Site-to-Site-and-Client-to-Site-Implementation/docs/technical-guides/02-network-topology.md).
-
-#### Bước 2: Cài đặt và cấu hình Gateway Trụ sở chính (`VM-HQ-GW`)
-```bash
-# 1. Cài đặt các gói phần mềm cần thiết:
-sudo bash scripts/common/install-prerequisites.sh gw
-
-# 2. Áp dụng cấu hình IP tĩnh Netplan:
-sudo cp configs/netplan/01-netcfg-hq-gw.yaml /etc/netplan/01-netcfg.yaml
-sudo netplan apply
-
-# 3. Kích hoạt IP Forwarding và Tường lửa iptables:
-sudo bash scripts/common/enable-ip-forward.sh
-sudo bash scripts/common/setup-firewall-rules.sh hq-gw
-
-# 4. Khởi tạo CA và cấp phát chứng chỉ số:
-sudo bash scripts/pki/init-ca.sh
-sudo bash scripts/pki/build-client-ovpn.sh client1
-
-# 5. Khởi chạy OpenVPN Server (Client-to-Site & Site-to-Site):
-sudo bash scripts/deploy-c2s-server.sh
-sudo bash scripts/deploy-s2s-hq.sh
-
-# 6. Cài đặt cấu hình strongSwan IPsec (chế độ mở rộng):
-sudo bash scripts/deploy-ipsec-hq.sh
+```powershell
+ipconfig
+route print -4
+ping -n 3 192.168.10.50
+Test-NetConnection 192.168.10.50 -Port 80
+Invoke-WebRequest -UseBasicParsing -Method Head -Uri http://192.168.10.50 -TimeoutSec 5
+Start-Process http://192.168.10.50
 ```
 
-#### Bước 3: Cài đặt và cấu hình Gateway Chi nhánh (`VM-Branch-GW`)
+Ngắt bằng OpenVPN GUI → `client1` → **Disconnect**. Không chạy `deploy-all.sh` hoặc `systemctl` trên Windows. Có thể dùng `quick-setup.bat` làm menu hỗ trợ; các chức năng SSH/SCP cần OpenSSH Client hoặc phần mềm tương đương. Xem [hướng dẫn Windows chi tiết](docs/technical-guides/08-windows-client-requirements.md).
+
+Tắt adapter NAT tạm trên các VM trước khi trình diễn. Không nối Remote-PC trực tiếp vào HQ-LAN-Net hoặc Branch-LAN-Net.
+
+## 4. Demo trực tiếp trong 6–8 phút
+
+1. **Client-to-Site:** Windows Remote-PC Connect bằng OpenVPN GUI → ipconfig/route print → ping HQ-Server → mở Portal.
+2. **Site-to-Site:** Armbian Branch-PC có GUI ping và mở cùng Portal trong browser qua hai gateway OpenVPN.
+3. **Mã hóa:** bắt gói WAN UDP 1194/1195 bằng tcpdump, tải file và mở bằng Wireshark; đối chứng HTTP bản rõ ở LAN.
+
+Chạy nhanh các lệnh trên đúng máy:
+
 ```bash
-# 1. Cài đặt các gói phần mềm:
-sudo bash scripts/common/install-prerequisites.sh gw
+# HQ-GW:
+sudo bash scripts/verify-c2s.sh server
+sudo bash scripts/verify-s2s.sh hq-gw
 
-# 2. Áp dụng IP tĩnh Netplan:
-sudo cp configs/netplan/01-netcfg-branch-gw.yaml /etc/netplan/01-netcfg.yaml
-sudo netplan apply
-
-# 3. Bật IP Forwarding và Tường lửa iptables:
-sudo bash scripts/common/enable-ip-forward.sh
-sudo bash scripts/common/setup-firewall-rules.sh branch-gw
-
-# 4. Triển khai OpenVPN S2S Client:
-sudo bash scripts/deploy-s2s-branch.sh
-
-# 5. Cài đặt strongSwan IPsec phía Branch:
-sudo bash scripts/deploy-ipsec-branch.sh
-```
-
-#### Bước 4: Cài đặt Máy chủ nội bộ HQ (`VM-HQ-Server`)
-```bash
-# 1. Áp dụng IP tĩnh Netplan:
-sudo cp configs/netplan/01-netcfg-hq-server.yaml /etc/netplan/01-netcfg.yaml
-sudo netplan apply
-
-# 2. Triển khai Cổng thông tin nội bộ Nginx:
-sudo bash scripts/deploy-hq-portal.sh
-
-# 3. Kiểm tra trạng thái Web Portal:
+# Branch-PC:
+bash scripts/verify-s2s.sh branch-pc
 bash scripts/verify-portal.sh
 ```
 
-#### Bước 5: Cấu hình và kết nối Máy khách từ xa (`VM-Remote-PC`)
-1. Cài đặt phần mềm **OpenVPN GUI** trên Windows (khuyến nghị phiên bản có Wintun driver).
-2. Sao chép tệp `client1.ovpn` (được tạo ra tại `/home/student/openvpn-ca/client1.ovpn` trên HQ Gateway) vào thư mục cấu hình: `C:\Users\<User>\OpenVPN\config\`.
-3. Nhấp chuột phải vào biểu tượng OpenVPN ở thanh Taskbar -> Chọn **Connect**.
-4. Biểu tượng chuyển sang màu xanh lá cây báo hiệu kết nối thành công (nhận IP `10.8.0.2`).
-5. Mở trình duyệt truy cập `http://192.168.10.50` để kiểm tra Cổng thông tin nội bộ HQ.
+Portal hiển thị IP mà Nginx quan sát được. C2S hiện dùng NAT nên có thể thấy `192.168.10.1`; kiểm tra IP tunnel bằng `ipconfig` trên Windows Remote-PC. Trạng thái/cipher của VPN phải đối chiếu log OpenVPN và gói tin, không suy ra chỉ từ IP trên trang Web.
 
----
+## 5. Tài liệu
 
-## 🔍 Kiểm Tra Nghiệm Thu & Chuyển Đổi Chế Độ VPN
+- [Kịch bản demo 6–8 phút](docs/presentation/demo-script.md).
+- [Đề cương 8 slide](docs/presentation/slides.md).
+- [Checklist nghiệm thu demo OpenVPN](tests/openvpn-demo.md).
+- [Topology và mẫu Netplan](docs/technical-guides/02-network-topology.md).
+- [PKI và thu hồi chứng chỉ — phần nâng cao](docs/technical-guides/03-pki-ca-setup.md).
+- [OpenVPN C2S với Windows client](docs/technical-guides/04-client-to-site-guide.md), [OpenVPN S2S](docs/technical-guides/05-site-to-site-guide.md).
+- [Windows tối thiểu và cách cài OpenVPN GUI](docs/technical-guides/08-windows-client-requirements.md).
+- [Armbian trên VMware: image, 3 CLI + 1 GUI, NIC và Netplan](docs/technical-guides/09-armbian-vmware-guide.md).
 
-### 1. Các lệnh kiểm tra tự động
+Các cấu hình/script strongSwan và chuyển mode là phần mở rộng, không nằm trong quy trình demo chính. Đã sửa proposal AEAD, yêu cầu PSK riêng và firewall khớp policy IPsec; triển khai cả hai đầu theo hướng dẫn IPsec trước khi kiểm thử. Dùng checklist OpenVPN ở trên để ghi kết quả đo thực tế; không coi các bảng PASS/benchmark cũ là bằng chứng của lần chạy mới.
+
+Tham khảo: [OpenVPN Community — Windows 10 trở lên](https://openvpn.net/community/), [Microsoft Lifecycle Windows 10](https://learn.microsoft.com/en-us/lifecycle/products/windows-10-home-and-pro).
+
+## 6. Kiểm tra bổ sung và giới hạn nghiệm thu
+
+Firewall IPv4 dùng chain riêng đặt trước các rule cũ: chỉ cho C2S → HQ LAN và hai chiều LAN-to-LAN qua S2S; chặn chuyển tiếp còn lại. WAN không được vào LAN bằng route tự thêm. SSH quản trị và ICMP tới **IP WAN gateway** vẫn được phép từ `172.16.1.0/24`. Đây là chính sách cho gateway chuyên dụng của lab; không áp dụng nguyên mẫu cho router đang phục vụ mạng khác. Phạm vi là IPv4, chưa nghiệm thu IPv6/Internet thật/NAT trung gian.
+
+Kết nối Windows trước, chờ khoảng 5 giây rồi chạy `verify-c2s.sh server`; thiếu client trong status mới sẽ báo lỗi. Chạy kiểm tra trên **cả HQ-Server và Branch-PC** để xác nhận S2S hai chiều:
+
 ```bash
-# Kiểm tra kết nối Client-to-Site (chạy trên HQ GW):
-bash scripts/verify-c2s.sh
-
-# Kiểm tra đường hầm Site-to-Site OpenVPN và ping LAN-to-LAN (chạy trên HQ GW hoặc Branch GW):
-bash scripts/verify-s2s.sh
-
-# Kiểm tra đường hầm strongSwan IPsec IKEv2 (chạy trên HQ GW hoặc Branch GW):
-bash scripts/verify-ipsec.sh
+# HQ-Server:
+bash scripts/verify-s2s.sh hq-server
+# Branch-PC:
+bash scripts/verify-s2s.sh branch-pc
 ```
 
-### 2. Chuyển đổi linh hoạt giữa OpenVPN và strongSwan
-Để tránh xung đột định tuyến khi chạy song song cả 2 công nghệ Site-to-Site, sử dụng kịch bản:
-```bash
-# Chuyển sang dùng đường hầm OpenVPN S2S:
-sudo bash scripts/switch-vpn-mode.sh openvpn
+Trên Windows có thể dùng `powershell -NoProfile -File scripts/verify-c2s-windows.ps1 -ExpectedState Connected`, rồi kiểm tra `Disconnected` sau khi ngắt GUI. Nếu chính sách thực thi chặn tệp, dùng các lệnh kiểm tra thủ công trong hướng dẫn Windows.
 
-# Chuyển sang dùng đường hầm strongSwan IPsec IKEv2:
-sudo bash scripts/switch-vpn-mode.sh ipsec
+```bash
+# Chạy tại checkout trên máy có Python 3 và Bash (Linux hoặc Git Bash Windows):
+python -m unittest discover -s tests -p test_repository.py -v
 ```
 
-### 3. Bắt gói tin phân tích mật mã bằng Wireshark
-```bash
-# Bắt gói tin OpenVPN trên card mạng WAN:
-sudo bash scripts/capture-traffic.sh -i eth0 -m openvpn-c2s -c 100
-
-# Bắt gói tin IPsec ESP trên card mạng WAN:
-sudo bash scripts/capture-traffic.sh -i eth0 -m ipsec -c 100
-
-# Bắt gói tin bản rõ đối chứng trên card mạng LAN:
-sudo bash scripts/capture-traffic.sh -i eth1 -m lan-http -c 50
-
-# Kiểm tra chống rò rỉ dữ liệu khi tắt VPN:
-sudo bash scripts/capture-traffic.sh -i eth0 -m leak-check -c 20
-```
+Bộ test offline kiểm tra cú pháp Bash, status/route và hành vi firewall qua các lệnh giả lập; không tạo VPN/VM và không thay đổi firewall máy đang chạy. CRL, chống đi vòng VPN, capture và reboot cần kiểm thử thật theo checklist. Không dùng số đo mẫu làm kết quả thực nghiệm.

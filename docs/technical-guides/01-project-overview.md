@@ -1,5 +1,7 @@
 # TÀI LIỆU KỸ THUẬT: TỔNG QUAN ĐỒ ÁN & MÔ HÌNH BẢO VỆ DỊCH VỤ NỘI BỘ
 
+> Demo hiện tại chỉ dùng OpenVPN C2S/S2S. Thực hiện [quy trình triển khai trong README](../../README.md) và [kịch bản 6–8 phút](../presentation/demo-script.md); nội dung chi tiết bên dưới là tài liệu tham khảo.
+
 > **Dự án:** Thiết lập mạng riêng ảo VPN Site-to-Site và Client-to-Site  
 > **Tài liệu:** `docs/technical-guides/01-project-overview.md`  
 > **Giai đoạn:** Giai đoạn 4 - Dựng Web Server nội bộ HQ & Kiểm tra truy cập từ xa  
@@ -23,13 +25,13 @@ Trong bối cảnh chuyển đổi số và xu hướng làm việc linh hoạt 
 
 1. **Triển khai 2 mô hình VPN chuẩn doanh nghiệp:**
    - **Mô hình 1: Client-to-Site (Remote Access VPN):** Sử dụng OpenVPN phục vụ nhân viên lưu động (`172.16.1.100`) kết nối an toàn vào mạng Trụ sở HQ (`192.168.10.0/24`).
-   - **Mô hình 2: Site-to-Site (LAN-to-LAN VPN):** Kết nối mạng LAN Trụ sở HQ (`192.168.10.0/24`) và Văn phòng Chi nhánh (`192.168.20.0/24`) thông qua cặp Gateway định tuyến, triển khai trên cả hai công nghệ: **OpenVPN Routed Tunnel** và **strongSwan IPsec IKEv2**.
+   - **Mô hình 2: Site-to-Site (LAN-to-LAN VPN):** Kết nối mạng LAN Trụ sở HQ (`192.168.10.0/24`) và Văn phòng Chi nhánh (`192.168.20.0/24`) thông qua cặp Gateway định tuyến, phương án chính **OpenVPN Routed Tunnel**; **strongSwan IPsec IKEv2** là phần mở rộng tùy chọn.
 2. **Xây dựng ứng dụng dịch vụ nội bộ (HQ Secure Intranet Portal):**
    - Đặt tại máy chủ `VM-HQ-Server` (`192.168.10.50`), nằm sâu trong phân vùng mạng nội bộ được cô lập hoàn toàn (`HQ-LAN-Net`).
    - Cung cấp giao diện trực quan giám sát kết nối (Network Identity Inspector) và kho tài liệu bảo mật để đo kiểm thông lượng.
 3. **Đo kiểm thực nghiệm & Phân tích an ninh:**
    - Bắt gói tin Wireshark so sánh lưu lượng bản rõ tại LAN và lưu lượng đã được đóng gói mã hóa tại WAN.
-   - Kiểm tra khả năng chống chịu tấn công và cơ chế thu hồi chứng chỉ tức thời (CRL).
+   - Kiểm tra khả năng chống chịu tấn công và cơ chế thu hồi chứng chỉ (CRL; phiên đang chạy cần ngắt hoặc restart).
 
 ---
 
@@ -84,7 +86,7 @@ sudo bash scripts/deploy-hq-portal.sh
    bash scripts/verify-portal.sh http://192.168.10.50
    ```
 2. **Kiểm tra trực quan bằng trình duyệt:**
-   - Mở trình duyệt Web trên Windows, gõ URL: `http://192.168.10.50`.
+   - Trên Windows Remote-PC, chọn OpenVPN GUI → client1 → Connect, đợi kết nối hoàn tất rồi mở `http://192.168.10.50` trong trình duyệt.
    - Quan sát bảng thông số mạng, tải thử tệp `corporate-security-policy-2026.txt`.
-   - Ngắt kết nối OpenVPN GUI -> F5 tải lại trang -> Xác nhận mất kết nối hoàn toàn.
+   - Chọn Disconnect, kiểm tra `route print -4` và thử `Invoke-WebRequest -UseBasicParsing -Method Head -Uri http://192.168.10.50 -TimeoutSec 3` trong PowerShell để xác nhận không còn truy cập trong mô hình cô lập; không dùng trang cache làm bằng chứng.
 

@@ -140,12 +140,12 @@ sudo bash scripts/pki/distribute-certs.sh local-server
 sudo bash scripts/pki/distribute-certs.sh branch-gw 172.16.1.20
 ```
 
-### 4.3. Đóng gói profile tự chứa (.ovpn inline) cho Windows Remote Client
+### 4.3. Đóng gói profile tự chứa (.ovpn inline) cho Windows Remote-PC
 Sử dụng script:
 ```bash
-bash scripts/pki/build-client-ovpn.sh client1 ~/client1.ovpn
+sudo bash scripts/pki/build-client-ovpn.sh client1 "$HOME/client1.ovpn"
 ```
-Tệp `client1.ovpn` thu được chứa toàn bộ nội dung của `ca.crt`, `client1.crt`, `client1.key` và `ta.key` bên trong các thẻ XML, cho phép người dùng chỉ cần import duy nhất một file vào OpenVPN GUI.
+Tệp `client1.ovpn` chứa `ca.crt`, `client1.crt`, `client1.key` và `ta.key` dưới dạng các khối inline. Chuyển profile từ HQ sang Windows Remote-PC bằng Shared Folder/WinSCP/SCP, rồi OpenVPN GUI → Import file → Connect. Không chuyển private key của CA. Xem [hướng dẫn C2S Windows](04-client-to-site-guide.md).
 
 ---
 
@@ -170,7 +170,7 @@ sudo chmod 644 /etc/openvpn/server/crl.pem
 sudo systemctl restart openvpn-server@server-c2s
 ```
 
-*Kết quả kiểm nghiệm:* Khi máy `client1` cố gắng bắt tay TLS lại với Gateway, kết nối sẽ bị từ chối ngay lập tức với thông điệp:
+*Kết quả kỳ vọng (chưa chạy VM):* Khi máy `client1` cố gắng bắt tay TLS lại với Gateway, kết nối sẽ bị từ chối ngay lập tức với thông điệp:
 `TLS_ERROR: CRL check failed: certificate revoked`.
 
 ---
@@ -190,3 +190,12 @@ openssl verify -CAfile ~/openvpn-ca/pki/ca.crt ~/openvpn-ca/pki/issued/client1.c
 # Kết quả kỳ vọng: client1.crt: OK
 ```
 
+
+
+## Bổ sung sau rà soát Chủ đề 14
+
+Server C2S dùng CCD allowlist `/etc/openvpn/ccd-c2s/` (mặc định CN `client1`). Server S2S chỉ nhận `branch-gw`. Khi cấp thêm nhân viên, tạo chứng chỉ **loại client** với CN riêng, thêm tệp CCD cùng tên ở C2S, rồi đóng gói profile; không dùng chung profile và không bật `duplicate-cn`. Client pin CN đúng server (`hq-c2s-server` hoặc `hq-s2s-gw`).
+
+Có thể chạy `sudo bash scripts/pki/revoke-client.sh client1` để thu hồi và publish CRL nguyên tử. Thêm `--disconnect` để restart server tương ứng, ngắt các phiên đang chạy; thao tác này làm gián đoạn mọi client của server đó. CRL mới không tự chấm dứt mọi phiên TLS đang tồn tại ngay lập tức. Theo dõi `nextUpdate`; `init-ca.sh` không tự gia hạn CRL đã có. Không tạo lại CA chỉ để phục hồi một client.
+
+CA/private keys không mật khẩu là lựa chọn lab. Giữ bản sao an toàn; không chuyển private key CA ra Branch/Windows hoặc đưa profile thật vào Git. Nếu CA được tạo bởi sudo và do root sở hữu, dùng sudo nhất quán để quản trị, không nới quyền toàn PKI cho mọi người đọc.

@@ -1,10 +1,12 @@
-# Cấu hình Netplan cho VM-HQ-Server (Máy chủ Web/Internal Portal)
+# Armbian HQ-Server; sửa NIC LAN và renderer theo image (Minimal: networkd).
 # Card eth0: Kết nối vào mạng LAN trụ sở (HQ-LAN-Net)
 network:
   version: 2
   renderer: networkd
   ethernets:
     eth0:
+      dhcp4: false
+      dhcp6: false
       addresses:
         - 192.168.10.50/24
       routes:

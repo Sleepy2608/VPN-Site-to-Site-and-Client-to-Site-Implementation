@@ -1,5 +1,7 @@
 # TÀI LIỆU KỸ THUẬT: TRIỂN KHAI OPENVPN SITE-TO-SITE ROUTED TUNNEL
 
+> Demo hiện tại chỉ dùng OpenVPN C2S/S2S. Thực hiện [quy trình triển khai trong README](../../README.md) và [kịch bản 6–8 phút](../presentation/demo-script.md); nội dung chi tiết bên dưới là tài liệu tham khảo.
+
 > **Dự án:** Thiết lập mạng riêng ảo VPN Site-to-Site và Client-to-Site  
 > **Tài liệu:** `docs/technical-guides/05-site-to-site-guide.md`  
 > **Giai đoạn:** Giai đoạn 5 - Triển khai Site-to-Site OpenVPN Routed Tunnel (HQ <=> Branch)  
@@ -8,7 +10,7 @@
 
 ## 1. Tổng Quan Kiến Trúc Mô Hình Site-to-Site (LAN-to-LAN)
 
-Mô hình **Site-to-Site VPN** cho phép liên kết hai hoặc nhiều mạng cục bộ (LAN) tại các vị trí địa lý khác nhau (Trụ sở chính HQ và Văn phòng Chi nhánh Branch Office) thành một mạng logic duy nhất thông qua cặp VPN Gateway:
+Mô hình **Site-to-Site VPN** cho phép liên kết hai hoặc nhiều mạng cục bộ (LAN) tại các vị trí địa lý khác nhau (Trụ sở chính HQ và Văn phòng Chi nhánh Branch Office) thành các subnet có thể định tuyến qua VPN thông qua cặp VPN Gateway:
 - **Đặc điểm nổi bật:** Toàn bộ quá trình mã hóa, giải mã và định tuyến được thực hiện tập trung tại 2 Gateway (`VM-HQ-GW` và `VM-Branch-GW`).
 - **Trong suốt với người dùng cuối (Transparency):** Các máy trạm tại hai bên (`192.168.10.50` và `192.168.20.50`) **hoàn toàn không cần cài đặt bất kỳ phần mềm VPN nào**; chúng giao tiếp với nhau như thể đang nằm trong cùng một mạng diện rộng riêng (WAN/MPLS nội bộ).
 
@@ -79,26 +81,16 @@ flowchart TD
 
 ## 4. Quy Tắc Tường Lửa Chuyển Tiếp (iptables FORWARD)
 
-Không giống mô hình Client-to-Site (cần NAT Masquerade), mô hình Site-to-Site Routed Tunnel yêu cầu bảo toàn địa chỉ IP gốc của hai mạng LAN để phục vụ giám sát và kiểm soát an ninh.
+S2S bảo toàn IP LAN nguồn, không dùng NAT. Dùng chính sách chung thay vì chỉ thêm ACCEPT:
 
-### Trên HQ Gateway (`VM-HQ-GW`):
 ```bash
-# Cho phép chuyển tiếp gói tin hai chiều giữa tun1 (S2S) và eth1 (HQ LAN)
-sudo iptables -A FORWARD -i tun1 -o eth1 -j ACCEPT
-sudo iptables -A FORWARD -i eth1 -o tun1 -j ACCEPT
-
-# Mở cổng dịch vụ OpenVPN S2S
-sudo iptables -A INPUT -i eth0 -p udp --dport 1195 -j ACCEPT
-sudo netfilter-persistent save
+# HQ-GW:
+sudo bash scripts/common/setup-firewall-rules.sh hq-gw openvpn
+# Branch-GW:
+sudo bash scripts/common/setup-firewall-rules.sh branch-gw openvpn
 ```
 
-### Trên Branch Gateway (`VM-Branch-GW`):
-```bash
-# Cho phép chuyển tiếp gói tin hai chiều giữa tun0 (S2S) và eth1 (Branch LAN)
-sudo iptables -A FORWARD -i tun0 -o eth1 -j ACCEPT
-sudo iptables -A FORWARD -i eth1 -o tun0 -j ACCEPT
-sudo netfilter-persistent save
-```
+HQ cho LAN ↔ tun1; Branch cho LAN ↔ tun0, khớp các subnet tương ứng. Lưu lượng liên site đi bản rõ qua WAN bị chặn, kể cả khi có route dự phòng. Hai host LAN không cài VPN client.
 
 ---
 
@@ -121,7 +113,7 @@ bash scripts/verify-s2s.sh branch-pc
 ```
 
 ### Các tiêu chí nghiệm thu đạt yêu cầu (Pass Criteria):
-- [x] **TC-05 (Tunnel Status):** Interface `tun1` (HQ: `10.9.0.1`) và `tun0` (Branch: `10.9.0.2`) đều ở trạng thái `UP`.
-- [x] **TC-06 (LAN-to-LAN Connectivity):** Từ máy `192.168.20.50` ping `192.168.10.50` đạt tỷ lệ phản hồi 100% không mất gói (0% loss), RTT < 5ms.
-- [x] **TC-07 (Traceroute Hop Inspection):** Lệnh `traceroute -n 192.168.10.50` hiển thị rõ ràng gói tin đi qua chặng Gateway nội bộ `192.168.20.1` -> chặng đường hầm `10.9.0.1` -> máy chủ `192.168.10.50` (hoàn toàn không để lộ địa chỉ mạng công cộng `172.16.1.x`).
-- [x] **HTTP Access:** Lệnh `curl -I http://192.168.10.50` từ máy trạm chi nhánh phản hồi `HTTP/1.1 200 OK`.
+- [ ] **TC-05 (Tunnel Status):** Interface `tun1` (HQ: `10.9.0.1`) và `tun0` (Branch: `10.9.0.2`) đều ở trạng thái `UP`.
+- [ ] **TC-06 (LAN-to-LAN Connectivity):** Từ máy `192.168.20.50` ping `192.168.10.50` đạt tỷ lệ phản hồi 100% không mất gói (0% loss), ghi RTT thực tế.
+- [ ] **TC-07 (Traceroute Hop Inspection):** Lệnh `traceroute -n 192.168.10.50` hiển thị rõ ràng gói tin đi qua chặng Gateway nội bộ `192.168.20.1` -> chặng đường hầm `10.9.0.1` -> máy chủ `192.168.10.50` (hoàn toàn không để lộ địa chỉ mạng công cộng `172.16.1.x`).
+- [ ] **HTTP Access:** Lệnh `curl -I http://192.168.10.50` từ máy trạm chi nhánh phản hồi `HTTP/1.1 200 OK`.

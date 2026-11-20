@@ -1,0 +1,6 @@
+{
+  "role": "branch-gw",
+  "code": 0,
+  "stdout": "192.168.10.50 via 172.16.1.10 dev c2s-wan src 172.16.1.101 uid 0 \n    cache \n[PASS] C2S disconnected: explicit direct WAN route cannot access HQ web\nTemporary C2S client and private test profile removed\n",
+  "stderr": ""
+}

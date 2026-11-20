@@ -1,0 +1,6 @@
+{
+  "role": "branch-gw",
+  "code": 0,
+  "stdout": "ISOLATION_EXIT=0\nNAT isolation check on branch-gw\nlo               UNKNOWN        127.0.0.1/8 ::1/128 \nens33            UP             172.16.1.20/24 fe80::20c:29ff:fed7:fa9e/64 \nens37            UP             192.168.20.1/24 fe80::20c:29ff:fed7:faa8/64 \nens38            DOWN           \ntun0             UNKNOWN        10.9.0.2/24 fe80::42cc:99f7:e363:2dab/64 \n10.9.0.0/24 dev tun0 proto kernel scope link src 10.9.0.2 \n172.16.1.0/24 dev ens33 proto kernel scope link src 172.16.1.20 \n192.168.10.0/24 via 10.9.0.1 dev tun0 \n192.168.20.0/24 dev ens37 proto kernel scope link src 192.168.20.1 \nPING 192.168.10.50 (192.168.10.50) from 192.168.20.1 : 56(84) bytes of data.\n64 bytes from 192.168.10.50: icmp_seq=1 ttl=63 time=2.90 ms\n64 bytes from 192.168.10.50: icmp_seq=2 ttl=63 time=2.18 ms\n64 bytes from 192.168.10.50: icmp_seq=3 ttl=63 time=2.23 ms\n\n--- 192.168.10.50 ping statistics ---\n3 packets transmitted, 3 received, 0% packet loss, time 2005ms\nrtt min/avg/max/mdev = 2.175/2.434/2.902/0.331 ms\n[PASS] LAN/VPN traffic works while this VM has no NAT IPv4\n",
+  "stderr": "Failed to stop codex-vpn-nat-recover-branch-gw.timer: Unit codex-vpn-nat-recover-branch-gw.timer not loaded.\n"
+}

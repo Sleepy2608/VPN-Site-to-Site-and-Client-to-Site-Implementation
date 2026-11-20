@@ -1,0 +1,6 @@
+{
+  "role": "branch-pc",
+  "code": 0,
+  "stdout": "ISOLATION_EXIT=0\nNAT isolation check on branch-pc\nlo               UNKNOWN        127.0.0.1/8 ::1/128 \nens33            UP             192.168.20.50/24 fe80::20c:29ff:fe1e:6f8b/64 \nens37            DOWN           \ndefault via 192.168.20.1 dev ens33 proto static metric 200 \n10.9.0.0/24 via 192.168.20.1 dev ens33 proto static \n192.168.10.0/24 via 192.168.20.1 dev ens33 proto static \n192.168.20.0/24 dev ens33 proto kernel scope link src 192.168.20.50 \nPING 192.168.10.50 (192.168.10.50) 56(84) bytes of data.\n64 bytes from 192.168.10.50: icmp_seq=1 ttl=62 time=2.04 ms\n64 bytes from 192.168.10.50: icmp_seq=2 ttl=62 time=2.60 ms\n64 bytes from 192.168.10.50: icmp_seq=3 ttl=62 time=3.45 ms\n\n--- 192.168.10.50 ping statistics ---\n3 packets transmitted, 3 received, 0% packet loss, time 2004ms\nrtt min/avg/max/mdev = 2.040/2.695/3.451/0.580 ms\n{\"ip\":\"192.168.20.50\",\"server_time\":\"2026-11-20T08:06:35+00:00\",\"status\":\"observed\"}\n[PASS] LAN/VPN traffic works while this VM has no NAT IPv4\n",
+  "stderr": "Failed to stop codex-vpn-nat-recover-branch-pc.timer: Unit codex-vpn-nat-recover-branch-pc.timer not loaded.\n"
+}

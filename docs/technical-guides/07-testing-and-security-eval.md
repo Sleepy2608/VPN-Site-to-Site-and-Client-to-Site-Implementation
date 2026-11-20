@@ -1,128 +1,58 @@
-# TÀI LIỆU KỸ THUẬT: BÁO CÁO KIỂM THỬ TOÀN DIỆN & ĐÁNH GIÁ AN NINH HỆ THỐNG VPN
+# Kế hoạch đo kiểm và đánh giá VPN
 
-> **Dự án:** Thiết lập mạng riêng ảo VPN Site-to-Site và Client-to-Site  
-> **Tài liệu:** `docs/technical-guides/07-testing-and-security-eval.md`  
-> **Giai đoạn:** Giai đoạn 7 - Kiểm thử chuyên sâu, Phân tích Wireshark & Đánh giá an ninh  
+**Đã có kết quả triển khai Linux ngày 20/11/2026 tại [báo cáo lab trực tiếp](../deployment/live-lab-status.md). Windows vẫn chờ người dùng cấu hình.** Các số RTT/throughput và nhãn PASS trong bản tài liệu trước không có log/PCAP đối chứng trong repo, đã được bỏ khỏi bảng kết quả. Xem [báo cáo rà soát](../topic14-audit.md) và [checklist nghiệm thu](../../tests/openvpn-demo.md).
 
----
+## Phạm vi và phương pháp
 
-## 1. TỔNG QUAN PHẠM VI KIỂM THỬ & MỤC TIÊU AN NINH
+Phương án chính là OpenVPN C2S + S2S trên 5 máy. Phải kiểm tra remote client vào host LAN HQ, hai host LAN khởi tạo lưu lượng theo cả hai chiều, từ chối truy cập trực tiếp WAN khi tự thêm route, và không đi bản rõ khi mất tunnel. IPsec là bài mở rộng, chạy cùng hạ tầng nhưng thay S2S ở cả hai gateway.
 
-Hệ thống mạng riêng ảo (VPN) của đồ án đã hoàn thiện 3 trụ cột kỹ thuật:
-1. **Hạ tầng khóa công khai PKI & CA Độc Lập:** Sử dụng Easy-RSA 3, chứng chỉ số X.509 v3 2048-bit, thuật toán Diffie-Hellman và cơ chế chữ ký HMAC `ta.key`.
-2. **OpenVPN Client-to-Site & Site-to-Site:** Mô hình đường hầm định tuyến (Routed Tunnel `tun`), hỗ trợ máy khách di động kết nối an toàn và kết nối mạng nội bộ giữa 2 chi nhánh.
-3. **Mở rộng strongSwan IPsec IKEv2:** Đường hầm Site-to-Site tốc độ cao hoạt động trực tiếp trong nhân Linux (In-Kernel XFRM/ESP).
+- Ping/HTTP xác nhận truy cập, không xác nhận riêng thuật toán mã hóa.
+- Traceroute hỗ trợ xem đường đi; dấu `*`, địa chỉ hop hoặc thiếu IP WAN không tự chứng minh mã hóa.
+- Status mới có CN chứng minh phiên tồn tại; service active đơn lẻ chưa chứng minh handshake.
+- Đối chiếu log cipher với PCAP WAN và LAN/TUN của cùng lần tạo traffic. Với IPsec policy-based, bắt tại máy quan sát WAN riêng khi cần tránh nhìn nhầm gói đã giải mã trong host Linux.
+- Không có gói trong capture chỉ là quan sát; phải xác nhận đúng NIC/filter, đã phát traffic và capture không lỗi.
 
-Mục tiêu của **Giai đoạn 7** là tiến hành kiểm thử thực nghiệm đa chiều: kiểm tra tính đúng đắn của định tuyến, đo đạc độ trễ và thông lượng, phân tích cấu trúc gói tin trên Wireshark, và thực hiện các bài kiểm thử an ninh chuyên sâu (Negative Testing, thu hồi chứng chỉ CRL, kiểm tra chống rò rỉ dữ liệu).
+## Bảng ghi kết quả thực
 
-```mermaid
-flowchart TD
-    subgraph AUDIT_SCOPE ["CÁC TRỤ CỘT KIỂM THỬ & ĐÁNH GIÁ"]
-        direction TB
-        T1["1. Kiểm Thử Chức Năng & Định Tuyến\n(11 Ca kiểm thử thực nghiệm)"]
-        T2["2. Đo Đạc Hiệu Năng & Độ Trễ\n(RTT, Throughput, MTU/MSS Clamping)"]
-        T3["3. Phân Tích Mật Mã Wireshark\n(Header ESP vs OpenVPN vs Cleartext)"]
-        T4["4. Đánh Giá Mô Hình Đe Dọa STRIDE\n(Xác thực, Toàn vẹn, Bảo mật, Chống DoS)"]
-    end
+| Phép đo | Mô hình/nguồn/đích | Kết quả | Bằng chứng/ngày/phiên bản |
+| --- | --- | --- | --- |
+| C2S IP/route/HTTP | Windows → HQ-Server | Chưa chạy | — |
+| S2S hai chiều | Branch-PC ↔ HQ-Server | Đạt trên VM | [Log và PCAP](../deployment/live-lab-status.md) |
+| Cipher và đóng gói | WAN đối chiếu LAN/TUN | Đạt log AES-256-GCM và PCAP | [Log và PCAP](../deployment/live-lab-status.md) |
+| Từ chối route đi vòng VPN | Windows WAN → HQ LAN | Linux tương đương đạt; Windows chưa thử | [Log và PCAP](../deployment/live-lab-status.md) |
+| Chống bản rõ khi tunnel ngắt | Branch LAN → HQ LAN qua route WAN dự phòng | Đạt; 0 gói LAN bản rõ, counter DROP tăng | [Log và PCAP](../deployment/live-lab-status.md) |
+| CRL và sai vai trò chứng chỉ | Kết nối mới tới HQ | Chưa chạy | — |
+| Khôi phục sau reboot | Hai gateway và HQ-Server | Đạt trên bốn Linux | [Log và PCAP](../deployment/live-lab-status.md) |
+| RTT/loss, 100 ping | Branch-PC → HQ-Server | Chưa đo | — |
+| Tải payload 1 MiB | Client → HQ-Server | Đạt chức năng: đúng byte/hash; chưa đo hiệu năng lặp lại | [Log và PCAP](../deployment/live-lab-status.md) |
+| IPsec S2S nếu thực hiện | Hai LAN + XFRM/ESP | Chưa chạy | — |
+
+## Đo hiệu năng có thể lặp lại
+
+Ghi CPU/RAM VM, phiên bản kernel/OpenVPN/strongSwan, DCO bật/tắt và cấu hình cipher trước mỗi lần đo. Giữ cùng tài nguyên và tải nền khi so sánh; báo cáo ít nhất ba lần cùng median và khoảng min–max.
+
+```bash
+# Branch-PC, sau khi xác nhận S2S hoạt động:
+ping -c 100 -W 2 192.168.10.50
+curl --noproxy '*' --fail --connect-timeout 3 --max-time 30 -o /tmp/vpn-benchmark.dat \
+  -w 'bytes=%{size_download} seconds=%{time_total} bytes_per_second=%{speed_download}\n' \
+  http://192.168.10.50/files/benchmark-payload-1mb.dat
+wc -c /tmp/vpn-benchmark.dat
+sha256sum /tmp/vpn-benchmark.dat
+# HQ-Server: đối chiếu hash tệp tại /var/www/vpn-lab-portal/files/.
 ```
 
----
+Tệp đúng 1.048.576 byte. Tải 1 MiB chỉ là kiểm tra ứng dụng sơ bộ, chịu ảnh hưởng handshake TCP/cache; không đủ để kết luận băng thông cực đại. Muốn đo throughput, cài iperf3 khi còn Internet, chạy server tại HQ-Server và đo cùng tham số/thời lượng giữa các mode. Không khẳng định IPsec luôn nhanh hơn; OpenVPN cũng có DCO tùy phiên bản/nền tảng, còn baseline server của bài này chủ động tắt DCO để dễ đối chứng TUN.
 
-## 2. BẢNG TỔNG HỢP KẾT QUẢ THỰC NGHIỆM (11 TEST CASES)
+## Đánh giá an ninh trong phạm vi lab
 
-Hệ thống đã trải qua quá trình kiểm thử nghiêm ngặt theo ma trận tại [tests/test-cases.md](file:///c:/University%20Coding%20Project/VPN-Site-to-Site-and-Client-to-Site-Implementation/tests/test-cases.md):
+| Rủi ro | Cơ chế hiện có | Giới hạn cần trình bày |
+| --- | --- | --- |
+| Nghe lén/sửa nội dung trên WAN | AES-GCM và TLS/PKI | HTTP vẫn bản rõ trong LAN sau giải mã; cần HTTPS nếu muốn bảo vệ ở tầng ứng dụng |
+| Giả mạo endpoint hoặc dùng sai vai trò | CA, kiểm tra EKU/CN, CCD allowlist | Profile chứa khóa riêng phải bảo vệ; NAT không định danh từng người dùng |
+| Thiết bị mất quyền truy cập | CRL | CRL mới chặn handshake; phiên cũ cần chủ động ngắt/restart |
+| Truy cập WAN đi vòng tunnel | Firewall giới hạn interface/subnet/policy | Cần kiểm thử cả route thủ công, counters và reboot; mới áp dụng IPv4 |
+| Gói điều khiển không hợp lệ | tls-crypt | Không bảo đảm chống được UDP flood/DoS làm đầy đường truyền |
+| Lộ CA/PSK | Quyền tệp, staging riêng, không commit profile thật | CA nopass và đặt cùng gateway là lựa chọn lab; production nên tách CA và quy trình cấp phát |
 
-| Mã TC | Tên Kịch Bản Kiểm Thử | Nguồn -> Đích | Giao Thức / Port | Kết Quả Thực Nghiệm | Trạng Thái |
-| :---: | :--- | :--- | :--- | :--- | :---: |
-| **TC-01** | Kết nối Remote Access Client-to-Site | Remote PC -> HQ GW | UDP 1194 / TLS 1.3 | Cấp IP `10.8.0.2`, OpenVPN GUI báo Connected xanh | ✅ PASS |
-| **TC-02** | Bảng định tuyến máy khách (Routing Push) | Remote PC (Windows) | Routing Table | Nạp thành công route `192.168.10.0/24` trỏ qua `10.8.0.1` | ✅ PASS |
-| **TC-03** | Ping máy chủ nội bộ HQ qua C2S | `10.8.0.2` -> `192.168.10.50` | ICMP Echo | RTT trung bình 1.8ms, tỷ lệ mất gói 0% | ✅ PASS |
-| **TC-04** | Truy cập Cổng thông tin nội bộ (HTTP) | Remote PC -> `192.168.10.50:80` | HTTP GET / TCP 80 | Tải trang thành công, HTTP 200, Web nhận diện đúng IP VPN | ✅ PASS |
-| **TC-05** | Thiết lập đường hầm Site-to-Site OpenVPN | HQ GW <=> Branch GW | UDP 1195 | Interface `tun1` (HQ) & `tun0` (Branch) UP, IP `10.9.0.1/2` | ✅ PASS |
-| **TC-06** | Thông suốt LAN-to-LAN hai chiều | `192.168.20.50` <=> `192.168.10.50` | ICMP Echo | Ping 2 chiều thành công 0% loss, Nginx ghi đúng IP nguồn | ✅ PASS |
-| **TC-07** | Xác nhận chặng định tuyến (Traceroute) | Branch PC -> HQ Server | UDP/ICMP Traceroute | Đi qua chặng `10.9.0.1`, không xuất hiện IP WAN `172.16.1.x` | ✅ PASS |
-| **TC-08** | Phân tích gói tin WAN (OpenVPN) | Card WAN `eth0` trên HQ GW | OpenVPN UDP | 100% Payload mã hóa AES-256-GCM, không lộ bản rõ HTTP | ✅ PASS |
-| **TC-09** | Phân tích gói tin WAN (IPsec ESP) | Card WAN `eth0` trên HQ GW | ESP (Proto 50), UDP 500 | Gói tin ESP có SPI/Sequence, Payload mã hóa, IKE đàm phán bảo mật | ✅ PASS |
-| **TC-10** | Thu hồi chứng chỉ số (CRL Revocation) | Client1 (bị thu hồi) -> HQ GW | TLS Handshake | Server từ chối kết nối: `TLS_ERROR: CRL check failed` | ✅ PASS |
-| **TC-11** | Chống rò rỉ dữ liệu khi ngắt kết nối | Ngắt dịch vụ OpenVPN S2S | LAN-to-LAN Traffic | Chặn toàn bộ traffic, 0 gói tin bị leak ra ngoài WAN | ✅ PASS |
-
----
-
-## 3. PHÂN TÍCH HIỆU NĂNG & ĐỘ TRỄ MẠNG (PERFORMANCE BENCHMARK)
-
-### 3.1. Đo đạc độ trễ vòng lặp (Round-Trip Time - RTT)
-Các bài đo được thực hiện với 100 gói tin ICMP kích thước tiêu chuẩn (64 bytes):
-
-| Kịch Bản Kết Nối | RTT Min (ms) | RTT Avg (ms) | RTT Max (ms) | Mất gói (Packet Loss) | Overhead Độ Trễ |
-| :--- | :---: | :---: | :---: | :---: | :---: |
-| **Baseline (Cùng mạng LAN vật lý)** | 0.35 | 0.52 | 0.89 | 0% | 0 ms (Gốc) |
-| **OpenVPN Client-to-Site** | 1.42 | 1.84 | 2.65 | 0% | +1.32 ms |
-| **OpenVPN Site-to-Site (tun)** | 1.68 | 2.15 | 3.12 | 0% | +1.63 ms |
-| **strongSwan IPsec IKEv2 (ESP)** | 0.82 | **1.18** | 1.95 | 0% | **+0.66 ms** |
-
-> [!NOTE]
-> **Nhận xét chuyên sâu:**
-> - Đường hầm **strongSwan IPsec có độ trễ trung bình thấp hơn khoảng 45%** so với OpenVPN (1.18ms so với 2.15ms).
-> - Nguyên nhân là do IPsec thực hiện mã hóa và đóng gói gói tin ESP trực tiếp trong không gian nhân (**In-Kernel Linux XFRM**), không tốn chi phí chuyển đổi ngữ cảnh (Context Switching) qua lại giữa User-space và Kernel-space thông qua thiết bị `/dev/net/tun` như OpenVPN.
-
-### 3.2. Đo đạc thông lượng truyền tải (Throughput với iperf3)
-
-```text
-# Lệnh đo thông lượng từ VM-Branch-PC tới VM-HQ-Server:
-iperf3 -c 192.168.10.50 -t 30 -P 4
-```
-
-- **OpenVPN Site-to-Site:** Đạt thông lượng xấp xỉ **850 - 890 Mbps** (giới hạn bởi xung nhịp CPU gán cho máy ảo khi xử lý single-threaded tun context).
-- **strongSwan IPsec Site-to-Site:** Đạt thông lượng xấp xỉ **940 - 960 Mbps** (gần chạm ngưỡng bão hòa của card mạng ảo Gigabit 1Gbps).
-
-### 3.3. Tối ưu hóa MTU và tránh phân mảnh gói tin (MSS Clamping)
-Khi đóng thêm các lớp Header bảo mật (Outer IP + UDP/ESP + IV + ICV), kích thước gói tin bị tăng thêm từ 50 đến 68 bytes. Nếu máy khách gửi gói tin TCP kích thước tối đa (MSS = 1460 bytes trên MTU 1500), gói tin sẽ vượt quá MTU vật lý và bị phân mảnh (Fragmentation), làm giảm đáng kể hiệu năng truyền tải.
-
-**Giải pháp đã cấu hình trong dự án:**
-1. Tham số `mssfix 1400` trong cấu hình OpenVPN tự động khống chế MSS của các luồng TCP.
-2. Quy tắc tường lửa `iptables` đã triển khai tại [setup-firewall-rules.sh](file:///c:/University%20Coding%20Project/VPN-Site-to-Site-and-Client-to-Site-Implementation/scripts/common/setup-firewall-rules.sh):
-   ```bash
-   sudo iptables -t mangle -A FORWARD -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu
-   ```
-   *Kết quả:* 100% các kết nối tải file dung lượng lớn (1MB, 10MB) diễn ra mượt mà, không gặp hiện tượng nghẽn mạng hay rớt kết nối giữa chừng.
-
----
-
-## 4. ĐÁNH GIÁ AN NINH HỆ THỐNG THEO MÔ HÌNH STRIDE
-
-| Mối Đe Dọa (STRIDE) | Rủi Ro Mục Tiêu | Cơ Chế Phòng Thủ Của Đồ Án | Đánh Giá Mức Độ An Toàn |
-| :--- | :--- | :--- | :---: |
-| **Spoofing (Giả mạo danh tính)** | Kẻ xấu mạo danh máy trạm chi nhánh hoặc nhân viên để truy cập trái phép. | Xác thực song phương (Mutual Authentication) bằng chứng chỉ số X.509 v3 do CA nội bộ ký duyệt và khóa chia sẻ IKEv2 PSK phức tạp 32+ ký tự. | **Tuyệt đối an toàn** |
-| **Tampering (Can thiệp / Sửa đổi)** | Sửa đổi nội dung gói tin trên đường truyền mạng WAN. | Thuật toán xác thực kèm mã hóa `AES-256-GCM` tạo ra thẻ kiểm tra toàn vẹn AEAD Tag 128-bit; nếu bị sửa 1 bit dữ liệu, gói tin lập tức bị hủy bỏ. | **Tuyệt đối an toàn** |
-| **Repudiation (Chối bỏ trách nhiệm)** | Người dùng chối bỏ việc đã thực hiện kết nối vào hệ thống. | Hệ thống quản lý CA Easy-RSA lưu trữ nhật ký nối tiếp (`serial`, `index.txt`) cho từng chứng chỉ đã cấp; Gateway ghi log thời gian kết nối chi tiết. | **Đạt chuẩn kiểm toán** |
-| **Information Disclosure (Lộ lọt thông tin)** | Kẻ nghe lén (Sniffer) bắt gói tin và đọc trộm tài liệu mật. | Mã hóa toàn bộ dữ liệu từ đầu cuối tới đầu cuối bằng khóa đối xứng 256-bit; bọc Outer IP Header che giấu cấu trúc mạng nội bộ. | **Tuyệt đối an toàn** |
-| **Denial of Service (Từ chối dịch vụ)** | Kẻ tấn công gửi bão gói tin UDP flood nhằm làm cạn kiệt CPU Gateway. | Cơ chế chữ ký số HMAC tầng tiền bắt tay `tls-auth` (`ta.key`) tự động drop âm thầm gói tin không hợp lệ tại socket mà không tốn tài nguyên giải mã. | **Khả năng chống chịu cao** |
-| **Elevation of Privilege (Leo thang đặc quyền)** | Khai thác lỗ hổng trong tiến trình OpenVPN để chiếm quyền root Gateway. | Cấu hình hạ quyền nghiêm ngặt `user nobody` và `group nogroup` sau khi khởi tạo; kết hợp cơ chế kiểm soát truy cập phân quyền per-client qua thư mục `ccd/`. | **Đạt chuẩn Hardening** |
-
----
-
-## 5. SO SÁNH TỔNG HỢP: OPENVPN VS STRONGSWAN IPSEC
-
-| Tiêu Chí So Sánh | OpenVPN (Site-to-Site & C2S) | strongSwan IPsec IKEv2 | Khuyến Nghị Doanh Nghiệp |
-| :--- | :--- | :--- | :--- |
-| **Tầng kiến trúc** | Tầng ứng dụng (Layer 4/Application) | Tầng mạng (Layer 3/Network) | Chọn IPsec cho Site-to-Site; OpenVPN cho Remote Access |
-| **Không gian xử lý** | User-space (qua `/dev/net/tun`) | In-Kernel (Linux XFRM) | IPsec cho hiệu năng và thông lượng tối đa |
-| **Khả năng vượt tường lửa & NAT** | Xuất sắc (chạy trên 1 cổng UDP hoặc TCP tùy chọn) | Cần hỗ trợ NAT-Traversal (UDP 4500) | OpenVPN linh hoạt hơn khi nhân viên ở khách sạn / mạng công cộng |
-| **Quản lý máy khách di động** | Đóng gói file cấu hình `.ovpn` inline cực kỳ tiện lợi | Cấu hình phức tạp hơn trên từng thiết bị | OpenVPN thân thiện với người dùng cuối |
-| **Hỗ trợ định tuyến phức tạp** | Rất mạnh nhờ `iroute` và `client-config-dir` | Phụ thuộc vào chính sách SPD/Security Policy | OpenVPN dễ phân tách dải IP cho nhiều văn phòng |
-| **Chuẩn công nghiệp** | Chuẩn phần mềm mã nguồn mở phổ biến | Chuẩn quốc tế IETF được hỗ trợ bởi Cisco, Fortinet, pfSense | IPsec tương thích hoàn hảo với thiết bị Router cứng |
-
----
-
-## 6. KẾT LUẬN & KIẾN NGHỊ NÂNG CAO
-
-### 6.1. Kết luận đồ án
-Đồ án đã thiết lập thành công một hệ thống mạng riêng ảo doanh nghiệp hoàn chỉnh, kết hợp hài hòa giữa:
-1. **Tính linh hoạt:** Giải pháp OpenVPN Client-to-Site cho phép người dùng di động truy cập tài nguyên nội bộ an toàn với độ bảo mật cao.
-2. **Tính hiệu năng:** Giải pháp Site-to-Site hỗ trợ cả 2 công nghệ OpenVPN Routed Tunnel và strongSwan IPsec IKEv2, cho phép kết nối ổn định và chuyển đổi chế độ an toàn thông qua script tự động hóa.
-3. **Tính tuân thủ:** Toàn bộ quy trình từ cấp phát chứng chỉ, thu hồi chứng chỉ (CRL), phân tích gói tin Wireshark đều được ghi nhận bằng chứng rõ ràng, không có bất kỳ lỗ hổng rò rỉ dữ liệu nào.
-
-### 6.2. Kiến nghị mở rộng trong môi trường sản xuất thực tế (Production Hardening)
-1. **Triển khai Web PKI Portal:** Tích hợp Vault của HashiCorp hoặc Smallstep CA để tự động hóa quy trình ký duyệt và gia hạn chứng chỉ qua giao thức ACME/EST.
-2. **Tích hợp xác thực đa yếu tố (MFA):** Bổ sung mã OTP (Google Authenticator qua `openvpn-plugin-auth-pam`) bên cạnh chứng chỉ số cho người dùng Remote Access.
-3. **Mô hình dự phòng nóng (High Availability / Failover):** Triển khai giao thức VRRP (Keepalived) giữa 2 máy chủ Gateway để tự động chuyển đổi khi một Gateway gặp sự cố phần cứng.
+Nguồn: [OpenVPN 2.6 manual](https://build.openvpn.net/man/openvpn-2.6/openvpn.8.html), [strongSwan proposal](https://docs.strongswan.org/docs/latest/config/proposals.html). Các kết luận triển khai trong tài liệu phải dựa trên bảng bằng chứng thực tế, không chỉ dựa trên có tệp cấu hình.

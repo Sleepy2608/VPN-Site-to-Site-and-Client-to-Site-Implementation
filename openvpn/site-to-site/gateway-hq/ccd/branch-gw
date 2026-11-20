@@ -5,3 +5,4 @@
 
 # Báo cho tiến trình OpenVPN biết subnet 192.168.20.0/24 thuộc sở hữu của client này
 iroute 192.168.20.0 255.255.255.0
+ifconfig-push 10.9.0.2 255.255.255.0

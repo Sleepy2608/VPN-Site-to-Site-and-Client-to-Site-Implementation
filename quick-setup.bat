@@ -1,17 +1,17 @@
 ﻿@echo off
 chcp 65001 >nul
-title VPN Site-to-Site & Client-to-Site Management Utility
+title VPN Site-to-Site ^& Client-to-Site Management Utility
 color 0A
 
 :: =============================================================================
 :: quick-setup.bat: Kịch bản kiểm tra và điều khiển nhanh hệ thống VPN Lab
-:: Dành cho môi trường Windows (Host / Remote PC 172.16.1.100)
+:: Windows 10/11 x64 Remote-PC VM (172.16.1.100); OpenVPN Community GUI.
 :: =============================================================================
 
 :MENU
 cls
 echo ==============================================================================
-echo       VPN SITE-TO-SITE & CLIENT-TO-SITE LAB MANAGEMENT CONTROLLER
+echo       VPN SITE-TO-SITE ^& CLIENT-TO-SITE LAB MANAGEMENT CONTROLLER
 echo ==============================================================================
 echo.
 echo   [1] Kiem tra ket noi mang (Ping HQ-GW, Branch-GW va HQ-Server)
@@ -26,6 +26,7 @@ echo   [9] Do toc do tai file 1MB bao mat tu HQ Server
 echo   [0] Thoat chuong trinh
 echo.
 echo ==============================================================================
+set "CHOICE="
 set /p CHOICE="Nhap lua chon cua ban [0-9]: "
 
 if "%CHOICE%"=="1" goto PING_TEST
@@ -63,7 +64,7 @@ echo [*] 4. Ping HQ Internal Server (LAN 192.168.10.50)...
 ping -n 3 192.168.10.50
 echo.
 echo ==============================================================================
-echo [!] Neu ping 192.168.10.50 thanh cong: Ban da ket noi VPN an toan!
+echo [!] Ping thanh cong chi xac nhan ket noi. Doi chieu route va log OpenVPN.
 echo [!] Neu ping that bai: Hay bat ket noi OpenVPN GUI hoac kiem tra IP.
 echo ==============================================================================
 pause
@@ -116,7 +117,7 @@ if exist "C:\Program Files\OpenVPN\bin\openvpn-gui.exe" (
     echo [OK] Da khoi chay OpenVPN GUI tu Program Files!
 ) else if exist "C:\Program Files (x86)\OpenVPN\bin\openvpn-gui.exe" (
     start "" "C:\Program Files (x86)\OpenVPN\bin\openvpn-gui.exe"
-    echo [OK] Da khoi chay OpenVPN GUI tu Program Files (x86)!
+    echo [OK] Da khoi chay OpenVPN GUI tu Program Files ^(x86^)!
 ) else (
     echo [!] Khong tim thay OpenVPN GUI o thu muc mac dinh. Vui long mo thu cong.
 )
@@ -149,7 +150,7 @@ echo          DO TOC DO TAI TAI LIEU MAT 1MB QUA DUONG HAM BAO MAT
 echo ==============================================================================
 echo.
 echo [*] Dang gui request tai file http://192.168.10.50/files/benchmark-payload-1mb.dat...
-powershell -Command "$start = Get-Date; try { Invoke-WebRequest -Uri 'http://192.168.10.50/files/benchmark-payload-1mb.dat' -OutFile '$env:TEMP\benchmark.dat' -UseBasicParsing; $duration = ((Get-Date) - $start).TotalSeconds; $speed = [math]::Round(1.0 / $duration, 2); Write-Host \"`n[THANH CONG] Da tai xong file 1MB trong $duration giay! (Toc do: $speed MB/s)\" -ForegroundColor Green } catch { Write-Host \"`n[THAT BAI] Khong the tai file. Hay kiem tra ket noi VPN!\" -ForegroundColor Red }"
+powershell.exe -NoProfile -Command "$targetFile = Join-Path $env:TEMP 'vpn-benchmark.dat'; try { $timer = [Diagnostics.Stopwatch]::StartNew(); Invoke-WebRequest -Uri 'http://192.168.10.50/files/benchmark-payload-1mb.dat' -OutFile $targetFile -UseBasicParsing -TimeoutSec 10 -ErrorAction Stop; $timer.Stop(); $bytes = (Get-Item -LiteralPath $targetFile).Length; $seconds = [math]::Max($timer.Elapsed.TotalSeconds, 0.000001); $rate = $bytes / 1MB / $seconds; Write-Host ('[OK] {0} bytes in {1:N3}s; {2:N2} MiB/s' -f $bytes, $seconds, $rate) -ForegroundColor Green } catch { Write-Host ('[FAIL] ' + $_.Exception.Message) -ForegroundColor Red; exit 1 }"
 echo.
 pause
 goto MENU
@@ -157,6 +158,5 @@ goto MENU
 :EXIT_SCRIPT
 echo.
 echo [*] Cam on ban da su dung VPN Management Utility. Tam biet!
-timeout /t 2 >nul
 exit /b 0
 

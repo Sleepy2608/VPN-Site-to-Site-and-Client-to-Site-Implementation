@@ -1,0 +1,6 @@
+{
+  "role": "branch-gw",
+  "code": 0,
+  "stdout": "WAN cleartext packets during stopped-S2S test: 0\nChain VPN_LAB_FORWARD (1 references)\n pkts bytes target     prot opt in     out     source               destination         \n  857 1134K ACCEPT     all  --  tun0   ens37   192.168.10.0/24      192.168.20.0/24     \n  422 22890 ACCEPT     all  --  ens37  tun0    192.168.20.0/24      192.168.10.0/24     \n    0     0 ACCEPT     all  --  tun0   ens37   10.9.0.0/24          192.168.20.0/24     \n    0     0 ACCEPT     all  --  ens37  tun0    192.168.20.0/24      10.9.0.0/24         \n    5   372 DROP       all  --  *      *       0.0.0.0/0            0.0.0.0/0           \n192.168.10.50 via 10.9.0.1 dev tun0 src 10.9.0.2 uid 0 \n    cache \n[PASS] Stopped tunnel produced no plaintext LAN packets on WAN; S2S restored\n",
+  "stderr": ""
+}

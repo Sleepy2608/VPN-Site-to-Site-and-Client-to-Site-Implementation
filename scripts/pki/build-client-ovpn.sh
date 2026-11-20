@@ -10,11 +10,15 @@
 set -euo pipefail
 
 CLIENT_NAME="${1:-client1}"
-OUTPUT_FILE="${2:-${HOME}/${CLIENT_NAME}.ovpn}"
-CA_DIR="${CA_DIR:-${HOME}/openvpn-ca}"
+if [[ ! "${CLIENT_NAME}" =~ ^[a-zA-Z0-9][a-zA-Z0-9_-]{0,63}$ ]]; then
+    echo "[ERROR] Invalid client CN." >&2; exit 1
+fi
+umask 077
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
+source "${REPO_ROOT}/scripts/common/pki-paths.sh"
+OUTPUT_FILE="${2:-${LAB_USER_HOME}/${CLIENT_NAME}.ovpn}"
 TEMPLATE_FILE="${REPO_ROOT}/openvpn/client-to-site/client/template.ovpn"
 
 echo "=============================================================================="
@@ -37,8 +41,14 @@ for f in "${CA_CRT}" "${CLIENT_CRT}" "${CLIENT_KEY}" "${TLS_KEY}"; do
     fi
 done
 
+if ! openssl x509 -in "${CLIENT_CRT}" -noout -purpose | grep -q '^SSL client : Yes'; then
+    echo '[ERROR] Refusing to embed a non-client certificate/key into a remote profile.' >&2
+    exit 1
+fi
+
 # 2. Tạo nội dung tệp profile
 TMP_OUTPUT="$(mktemp)"
+trap 'rm -f "${TMP_OUTPUT}"' EXIT
 
 # Nạp template cấu hình cơ sở
 if [[ -f "${TEMPLATE_FILE}" ]]; then
@@ -81,6 +91,9 @@ echo -e "</tls-crypt>" >> "${TMP_OUTPUT}"
 # 4. Di chuyển vào đích đến và phân quyền an toàn
 mv "${TMP_OUTPUT}" "${OUTPUT_FILE}"
 chmod 600 "${OUTPUT_FILE}"
+if [[ "${EUID}" -eq 0 && -n "${SUDO_USER:-}" ]]; then
+    chown "${SUDO_USER}:" "${OUTPUT_FILE}"
+fi
 
 echo "[SUCCESS] Đã tạo thành công tệp cấu hình OpenVPN tự chứa:"
 echo "          --> ${OUTPUT_FILE}"
@@ -88,6 +101,6 @@ echo "          (Quyền truy cập đã được thiết lập nghiêm ngặt: 
 echo ""
 echo "Hướng dẫn tiếp theo:"
 echo "1. Chuyển tệp '${OUTPUT_FILE}' sang máy người dùng từ xa (VM-Remote-PC)."
-echo "2. Mở ứng dụng OpenVPN GUI trên Windows -> Chọn 'Import file...'."
-echo "3. Nhấn 'Connect' để kích hoạt đường hầm bảo mật."
+echo "2. Trên Windows Remote-PC: OpenVPN GUI -> Import file... -> chọn profile."
+echo "3. Chọn client1 -> Connect; kiểm tra IP tunnel bằng ipconfig."
 

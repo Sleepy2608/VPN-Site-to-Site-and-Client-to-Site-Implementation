@@ -1,114 +1,54 @@
 #!/usr/bin/env bash
-# ==============================================================================
-# Script: switch-vpn-mode.sh
-# Mục đích: Chuyển đổi nhanh và an toàn giữa hai mô hình Site-to-Site VPN
-#           (OpenVPN Routed Tunnel vs strongSwan IPsec IKEv2) trên Gateway
-#           để tránh xung đột định tuyến khi thực hành Lab.
-# Sử dụng: sudo ./switch-vpn-mode.sh [openvpn|ipsec|status]
-# ==============================================================================
-
+# Run on BOTH gateways. Persist selected mode across reboot; keep C2S running.
 set -euo pipefail
-
-# Kiểm tra quyền root
-if [[ "${EUID}" -ne 0 ]]; then
-    echo "[ERROR] Vui lòng chạy script này với quyền root: sudo $0" >&2
-    exit 1
-fi
-
 MODE="${1:-status}"
-
-# Tự nhận diện vai trò Gateway
-IS_HQ=0
-if ip addr show 2>/dev/null | grep -q "172.16.1.10"; then
-    IS_HQ=1
+ROLE="${2:-auto}"
+case "${MODE}" in openvpn|ipsec|status) ;; *) echo 'Invalid mode' >&2; exit 1 ;; esac
+case "${ROLE}" in hq-gw|branch-gw|auto) ;; *) echo 'Invalid role' >&2; exit 1 ;; esac
+if [[ "${EUID}" -ne 0 ]]; then echo '[ERROR] Run with sudo.' >&2; exit 1; fi
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+if [[ "${ROLE}" == auto ]]; then
+    addresses="$(ip -4 -o addr show)"
+    if [[ "${addresses}" == *' 172.16.1.10/'* ]]; then ROLE=hq-gw
+    elif [[ "${addresses}" == *' 172.16.1.20/'* ]]; then ROLE=branch-gw
+    else echo '[ERROR] Cannot identify gateway.' >&2; exit 1; fi
 fi
-
+if [[ "${ROLE}" == hq-gw ]]; then
+    OPENVPN_UNIT=openvpn-server@server-s2s
+    OPENVPN_CONF=/etc/openvpn/server/server-s2s.conf
+else
+    OPENVPN_UNIT=openvpn-client@client-s2s
+    OPENVPN_CONF=/etc/openvpn/client/client-s2s.conf
+fi
+IPSEC_UNIT=''
+for unit in strongswan-starter.service strongswan.service; do
+    if systemctl cat "${unit}" >/dev/null 2>&1; then IPSEC_UNIT="${unit}"; break; fi
+done
 case "${MODE}" in
     openvpn)
-        echo "=============================================================================="
-        echo " CHUYỂN SANG CHẾ ĐỘ: OPENVPN SITE-TO-SITE ROUTED TUNNEL"
-        echo "=============================================================================="
-
-        # 1. Dừng strongSwan IPsec
-        echo "[*] Dừng dịch vụ strongSwan IPsec..."
-        ipsec stop 2>/dev/null || true
-        systemctl stop strongswan 2>/dev/null || true
-
-        # 2. Khởi động OpenVPN S2S tương ứng
-        if [[ "${IS_HQ}" -eq 1 ]]; then
-            echo "[*] Khởi động OpenVPN S2S Server trên HQ Gateway..."
-            systemctl start openvpn-server@server-s2s
-            sleep 2
-            systemctl is-active openvpn-server@server-s2s
-        else
-            echo "[*] Khởi động OpenVPN S2S Client trên Branch Gateway..."
-            systemctl start openvpn-client@client-s2s
-            sleep 2
-            systemctl is-active openvpn-client@client-s2s
-        fi
-        echo "[SUCCESS] Đã kích hoạt chế độ OpenVPN Site-to-Site thành công!"
+        [[ -s "${OPENVPN_CONF}" ]] || { echo '[ERROR] Deploy OpenVPN first.' >&2; exit 1; }
+        bash "${SCRIPT_DIR}/common/prepare-openvpn.sh"
+        bash "${SCRIPT_DIR}/common/setup-firewall-rules.sh" "${ROLE}" openvpn
+        systemctl enable "${OPENVPN_UNIT}"
+        systemctl restart "${OPENVPN_UNIT}"
+        systemctl is-active --quiet "${OPENVPN_UNIT}"
         ;;
-
     ipsec)
-        echo "=============================================================================="
-        echo " CHUYỂN SANG CHẾ ĐỘ: STRONGSWAN IPSEC IKEV2 TUNNEL"
-        echo "=============================================================================="
-
-        # 1. Dừng OpenVPN S2S tương ứng
-        if [[ "${IS_HQ}" -eq 1 ]]; then
-            echo "[*] Dừng dịch vụ OpenVPN S2S Server..."
-            systemctl stop openvpn-server@server-s2s 2>/dev/null || true
-        else
-            echo "[*] Dừng dịch vụ OpenVPN S2S Client..."
-            systemctl stop openvpn-client@client-s2s 2>/dev/null || true
+        [[ -n "${IPSEC_UNIT}" && -s /etc/ipsec.conf && -s /etc/ipsec.secrets ]] || { echo '[ERROR] Deploy IPsec and its private PSK first.' >&2; exit 1; }
+        bash "${SCRIPT_DIR}/common/check-ipsec-secrets.sh" /etc/ipsec.secrets
+        if systemctl cat "${OPENVPN_UNIT}" >/dev/null 2>&1; then
+            systemctl disable --now "${OPENVPN_UNIT}"
         fi
-
-        # 2. Khởi động strongSwan IPsec
-        echo "[*] Khởi động dịch vụ strongSwan..."
-        systemctl start strongswan 2>/dev/null || ipsec start
-        sleep 2
-
-        if [[ "${IS_HQ}" -eq 0 ]]; then
-            echo "[*] Branch Gateway đang bắt tay IKEv2..."
-            ipsec up branch-to-hq || true
-        fi
-
-        echo "[SUCCESS] Đã kích hoạt chế độ strongSwan IPsec IKEv2 thành công!"
-        ipsec status || true
+        bash "${SCRIPT_DIR}/common/setup-firewall-rules.sh" "${ROLE}" ipsec
+        systemctl enable "${IPSEC_UNIT}"
+        systemctl restart "${IPSEC_UNIT}"
+        systemctl is-active --quiet "${IPSEC_UNIT}"
         ;;
-
     status)
-        echo "=============================================================================="
-        echo " TRẠNG THÁI HIỆN TẠI CỦA CÁC DỊCH VỤ VPN SITE-TO-SITE"
-        echo "=============================================================================="
-        echo -n "  - OpenVPN S2S Service: "
-        if [[ "${IS_HQ}" -eq 1 ]]; then
-            if systemctl is-active --quiet openvpn-server@server-s2s 2>/dev/null; then
-                echo "RUNNING (ACTIVE)"
-            else
-                echo "STOPPED"
-            fi
-        else
-            if systemctl is-active --quiet openvpn-client@client-s2s 2>/dev/null; then
-                echo "RUNNING (ACTIVE)"
-            else
-                echo "STOPPED"
-            fi
-        fi
-
-        echo -n "  - strongSwan IPsec Service: "
-        if ipsec status 2>/dev/null | grep -q "Security Associations"; then
-            echo "RUNNING (ACTIVE)"
-            ipsec status | head -n 3
-        else
-            echo "STOPPED"
-        fi
-        echo ""
-        echo "Cách chuyển đổi: sudo $0 [openvpn | ipsec]"
-        ;;
-
-    *)
-        echo "[ERROR] Lựa chọn không hợp lệ: '${MODE}'. Sử dụng: openvpn | ipsec | status" >&2
-        exit 1
+        systemctl is-active "${OPENVPN_UNIT}" || true
+        if [[ -n "${IPSEC_UNIT}" ]]; then systemctl is-active "${IPSEC_UNIT}" || true; fi
+        if command -v ipsec >/dev/null 2>&1; then ipsec status || true; fi
+        exit 0
         ;;
 esac
+echo "[OK] ${ROLE}: ${MODE} service started. Run the same mode on the peer and verify real traffic."

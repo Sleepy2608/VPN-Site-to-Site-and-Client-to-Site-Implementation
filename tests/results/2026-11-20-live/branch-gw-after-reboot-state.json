@@ -1,0 +1,6 @@
+{
+  "role": "branch-gw",
+  "code": 0,
+  "stdout": "branch-gw\nb875c2b8-9bfe-490f-bb15-10823375a4a2\nlo               UNKNOWN        127.0.0.1/8 ::1/128 \nens33            UP             172.16.1.20/24 fe80::20c:29ff:fed7:fa9e/64 \nens37            UP             192.168.20.1/24 fe80::20c:29ff:fed7:faa8/64 \nens38            UP             192.168.27.139/24 metric 50 fe80::20c:29ff:fed7:fab2/64 \ntun0             UNKNOWN        10.9.0.2/24 fe80::a799:ae51:d40b:9273/64 \ndefault via 192.168.27.2 dev ens38 proto dhcp src 192.168.27.139 metric 50 \n10.9.0.0/24 dev tun0 proto kernel scope link src 10.9.0.2 \n172.16.1.0/24 dev ens33 proto kernel scope link src 172.16.1.20 \n192.168.10.0/24 via 10.9.0.1 dev tun0 \n192.168.20.0/24 dev ens37 proto kernel scope link src 192.168.20.1 \n192.168.27.0/24 dev ens38 proto kernel scope link src 192.168.27.139 metric 50 \n192.168.27.2 dev ens38 proto dhcp scope link src 192.168.27.139 metric 50 \nactive\nnet.ipv4.ip_forward = 1\n-N VPN_LAB_FORWARD\n-A VPN_LAB_FORWARD -s 192.168.10.0/24 -d 192.168.20.0/24 -i tun0 -o ens37 -j ACCEPT\n-A VPN_LAB_FORWARD -s 192.168.20.0/24 -d 192.168.10.0/24 -i ens37 -o tun0 -j ACCEPT\n-A VPN_LAB_FORWARD -s 10.9.0.0/24 -d 192.168.20.0/24 -i tun0 -o ens37 -j ACCEPT\n-A VPN_LAB_FORWARD -s 192.168.20.0/24 -d 10.9.0.0/24 -i ens37 -o tun0 -j ACCEPT\n-A VPN_LAB_FORWARD -j DROP\n",
+  "stderr": ""
+}

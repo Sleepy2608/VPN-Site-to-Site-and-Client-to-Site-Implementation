@@ -1,18 +1,18 @@
-# TÀI LIỆU THUYẾT TRÌNH & KỊCH BẢN BẢO VỆ ĐỒ ÁN (PRESENTATION & DEFENSE)
+# Tài liệu demo OpenVPN
 
-Thư mục này chứa toàn bộ tài liệu phục vụ buổi báo cáo và bảo vệ đồ án trước Hội đồng chấm thi:
+**Phương án nghiệm thu đủ Chủ đề 14: mô hình 5 máy trên VMware, chạy OpenVPN C2S và S2S.** Xem [báo cáo rà soát](../topic14-audit.md). Mô hình 3 máy chỉ là bài thực hành C2S; web demo chạy tại `http://10.8.0.1` trong tunnel.
 
----
+- **[Bộ hướng dẫn triển khai 5 máy](../deployment/README.md)**: phần chuẩn bị chung và hướng dẫn riêng cho HQ-GW, Branch-GW, HQ-Server, Branch-PC, Windows Remote-PC, kèm nghiệm thu toàn hệ thống.
 
-## 📂 Danh Mục Tài Liệu
+Các tài liệu dưới đây dành cho **mô hình 5 máy chính** (OpenVPN C2S/S2S) hoặc yêu cầu nền tảng; không dùng lẫn lệnh/IP với mô hình 3 máy:
 
-1. **[demo-script.md](file:///c:/University%20Coding%20Project/VPN-Site-to-Site-and-Client-to-Site-Implementation/docs/presentation/demo-script.md):**
-   - **Kịch bản Demo trực tiếp (10 - 15 phút):** Chi tiết 5 màn trình diễn thực hành trên máy chiếu kèm lời dẫn thuyết minh mẫu:
-     - Màn 1: Khởi động môi trường Lab 5 máy ảo.
-     - Màn 2: Demo Remote Worker kết nối OpenVPN GUI, kiểm tra Split-Tunneling và truy cập Web Portal nội bộ.
-     - Màn 3: Demo Site-to-Site OpenVPN, ping thông suốt 2 chiều LAN-to-LAN và traceroute.
-     - Màn 4: Demo chuyển sang strongSwan IPsec IKEv2 bằng `switch-vpn-mode.sh` và kiểm tra SA.
-     - Màn 5: Demo bắt gói tin Wireshark đối chứng và thu hồi chứng chỉ CRL từ chối truy cập thời gian thực.
-2. **[slides.md](file:///c:/University%20Coding%20Project/VPN-Site-to-Site-and-Client-to-Site-Implementation/docs/presentation/slides.md):**
-   - **Đề cương 18 Slide PowerPoint / Canva:** Cung cấp đầy đủ nội dung, số liệu, bảng biểu so sánh, mô hình đe dọa STRIDE và cấu trúc trình bày chuẩn học thuật.
+- [Kịch bản triển khai và demo chi tiết](detailed-lab-runbook.md): phần mềm từng máy, cấu hình IP/NAT tạm, thứ tự triển khai, kiểm tra và lời dẫn 8–10 phút.
+- [Kịch bản demo rút gọn](demo-script.md): Remote-PC → HQ, Branch-PC → HQ, bắt gói WAN/LAN trong 6–8 phút.
+- [Đề cương 8 slide](slides.md): mô hình, công nghệ, cấu hình và bằng chứng.
+- [Triển khai](../../README.md): một quy trình chạy Bash theo từng node.
+- [Checklist nghiệm thu](../../tests/openvpn-demo.md): ghi kết quả thật trước khi bảo vệ.
+- [Windows tối thiểu và chuẩn bị client](../technical-guides/08-windows-client-requirements.md): Windows 10 trở lên, baseline lab Windows 10 22H2 x64, khuyến nghị Windows 11 x64 còn được hỗ trợ.
+- [Chuẩn bị Armbian Generic x86_64 trên VMware](../technical-guides/09-armbian-vmware-guide.md): chọn image, LAN Segment, renderer mạng và NIC.
+- [Bài thực hành C2S 3 máy](three-vm-openvpn-demo.md): dùng riêng khi học remote access, không thay bài S2S.
 
+Chuẩn bị VM và dịch vụ trước giờ trình diễn. Phần so sánh IPsec/strongSwan cũ không thuộc demo chính.
