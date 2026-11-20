@@ -159,4 +159,3 @@ goto MENU
 echo.
 echo [*] Cam on ban da su dung VPN Management Utility. Tam biet!
 exit /b 0
-
