@@ -19,7 +19,9 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 SERVER_CONF_SRC="${REPO_ROOT}/openvpn/client-to-site/server/server.conf"
 SERVER_CONF_DEST="/etc/openvpn/server/server-c2s.conf"
-CA_DIR="${CA_DIR:-/home/${SUDO_USER:-$USER}/openvpn-ca}"
+source "${SCRIPT_DIR}/common/pki-paths.sh"
+source "${SCRIPT_DIR}/common/lab-network.sh"
+check_gateway_interfaces
 
 echo "=============================================================================="
 echo " TRIỂN KHAI OPENVPN CLIENT-TO-SITE SERVER (VM-HQ-GW)"
@@ -32,8 +34,12 @@ if ! command -v openvpn &>/dev/null; then
     DEBIAN_FRONTEND=noninteractive apt install -y openvpn iptables-persistent netfilter-persistent
 fi
 
+bash "${SCRIPT_DIR}/common/check-openvpn-version.sh"
+
 # 2. Tạo thư mục cấu hình và thư mục lưu trữ log
-mkdir -p /etc/openvpn/server /var/log/openvpn
+mkdir -p /etc/openvpn/server /var/log/openvpn /etc/openvpn/ccd-c2s
+# An explicit CCD entry authorizes the remote employee, separate from Branch.
+install -m 644 /dev/null /etc/openvpn/ccd-c2s/client1
 
 # 3. Đồng bộ chứng chỉ số và khóa mật mã nếu chưa có trong /etc/openvpn/server/
 REQUIRED_FILES=(
@@ -75,15 +81,10 @@ chmod 600 /etc/openvpn/server/*.key /etc/openvpn/server/ta.key 2>/dev/null || tr
 chmod 644 /etc/openvpn/server/*.crt /etc/openvpn/server/*.pem 2>/dev/null || true
 echo "[+] Các chứng chỉ và khóa mật mã đã được bảo vệ an toàn."
 
-# 4. Sao chép tệp cấu hình server-c2s.conf và thư mục ccd-c2s
+# 4. Sao chép tệp cấu hình server-c2s.conf
 echo "[*] Nạp tệp cấu hình ${SERVER_CONF_DEST}..."
 cp "${SERVER_CONF_SRC}" "${SERVER_CONF_DEST}"
-
-if [[ -d "${REPO_ROOT}/openvpn/client-to-site/server/ccd-c2s" ]]; then
-    echo "[*] Nạp cấu hình Client Config Directory (CCD) cấp IP tĩnh..."
-    mkdir -p /etc/openvpn/server/ccd-c2s
-    cp -r "${REPO_ROOT}/openvpn/client-to-site/server/ccd-c2s/"* /etc/openvpn/server/ccd-c2s/
-fi
+bash "${SCRIPT_DIR}/common/check-openvpn-version.sh" "${SERVER_CONF_DEST}"
 
 # 5. Kích hoạt IP Forwarding tại tầng nhân kernel
 echo "[*] Kiểm tra trạng thái chuyển tiếp IPv4..."
@@ -92,38 +93,8 @@ if [[ ! -f /etc/sysctl.d/99-vpn-forward.conf ]]; then
     echo "net.ipv4.ip_forward = 1" > /etc/sysctl.d/99-vpn-forward.conf
 fi
 
-# 6. Cấu hình tường lửa iptables cho đường hầm C2S
-echo "[*] Thiết lập quy tắc tường lửa và NAT Masquerade..."
-
-add_rule() {
-    local table="$1"
-    shift
-    if ! iptables -t "${table}" -C "$@" 2>/dev/null; then
-        iptables -t "${table}" -A "$@"
-    fi
-}
-
-# Cho phép lưu lượng giữa tun0 và card LAN eth1
-add_rule filter FORWARD -i tun0 -o eth1 -j ACCEPT
-add_rule filter FORWARD -i eth1 -o tun0 -m state --state RELATED,ESTABLISHED -j ACCEPT
-
-# Cho phép lưu lượng giữa các Client VPN (Client-to-Client qua tun0)
-add_rule filter FORWARD -i tun0 -o tun0 -j ACCEPT
-
-# Bật NAT Masquerade cho dải VPN ra LAN HQ
-add_rule nat POSTROUTING -s 10.8.0.0/24 -o eth1 -j MASQUERADE
-
-# Mở cổng dịch vụ OpenVPN UDP 1194 trên card WAN eth0
-add_rule filter INPUT -i eth0 -p udp --dport 1194 -j ACCEPT
-
-# Bật TCP MSS Clamping để chống phân mảnh gói
-add_rule mangle FORWARD -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu
-
-# Lưu quy tắc vĩnh viễn
-if command -v netfilter-persistent &>/dev/null; then
-    netfilter-persistent save >/dev/null
-fi
-echo "[+] Đã cấu hình và lưu vĩnh viễn quy tắc iptables."
+# Apply the shared policy before starting the tunnel.
+bash "${SCRIPT_DIR}/common/setup-firewall-rules.sh" hq-gw openvpn
 
 # 7. Khởi động và kích hoạt dịch vụ systemd
 echo "[*] Khởi động dịch vụ openvpn-server@server-c2s..."

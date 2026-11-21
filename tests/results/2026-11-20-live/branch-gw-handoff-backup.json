@@ -1,0 +1,6 @@
+{
+  "role": "branch-gw",
+  "code": 0,
+  "stdout": "Final private configuration backup: /root/vpn-lab-backup/final-config-20261120-082223.tar.gz\nCurrent source synchronized: /home/branchgateway/vpn-lab\nFri Nov 20 08:22:23 AM UTC 2026\n",
+  "stderr": ""
+}

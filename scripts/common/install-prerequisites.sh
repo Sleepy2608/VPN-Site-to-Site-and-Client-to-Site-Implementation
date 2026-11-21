@@ -14,6 +14,7 @@ if [[ "${EUID}" -ne 0 ]]; then
 fi
 
 ROLE="${1:-gw}"
+case "${ROLE}" in gw|gateway|server|pc|client) ;; *) echo "Invalid role" >&2; exit 1 ;; esac
 
 echo "=============================================================================="
 echo " Cài đặt gói phần mềm cho vai trò: ${ROLE}"
@@ -22,17 +23,16 @@ echo "==========================================================================
 # Cập nhật danh mục gói
 echo "[*] Đang cập nhật danh mục gói hệ thống..."
 apt update -y
+DEBIAN_FRONTEND=noninteractive apt install -y iproute2 iputils-ping ca-certificates
 
 case "${ROLE}" in
-    gw|gateway|hq-gw|server|vm-server)
-        echo "[*] Cài đặt gói cho VPN Gateway / VM-Server (OpenVPN, strongSwan, Nginx, iptables, tools)..."
+    gw|gateway)
+        echo "[*] Cài đặt gói cho VPN Gateway (OpenVPN, Easy-RSA, iptables, SSH, tools)..."
         DEBIAN_FRONTEND=noninteractive apt install -y \
             openvpn \
             easy-rsa \
-            strongswan \
-            strongswan-pki \
-            libstrongswan-extra-plugins \
-            nginx \
+            openssh-server \
+            openssh-client \
             iptables \
             iptables-persistent \
             netfilter-persistent \
@@ -42,24 +42,8 @@ case "${ROLE}" in
             curl \
             chrony
         ;;
-    branch-gw|client-linux|vm-client-linux)
-        echo "[*] Cài đặt gói cho Branch Gateway / Client Linux (OpenVPN, strongSwan, iptables, tools)..."
-        DEBIAN_FRONTEND=noninteractive apt install -y \
-            openvpn \
-            strongswan \
-            strongswan-pki \
-            libstrongswan-extra-plugins \
-            iptables \
-            iptables-persistent \
-            netfilter-persistent \
-            net-tools \
-            tcpdump \
-            traceroute \
-            curl \
-            chrony
-        ;;
-    legacy-server)
-        echo "[*] Cài đặt gói cho Internal Server riêng biệt (Nginx, curl, chrony)..."
+    server)
+        echo "[*] Cài đặt gói cho Internal Server (Nginx, curl, chrony)..."
         DEBIAN_FRONTEND=noninteractive apt install -y \
             nginx \
             curl \
@@ -76,13 +60,17 @@ case "${ROLE}" in
             chrony
         ;;
     *)
-        echo "[ERROR] Vai trò không hợp lệ: '${ROLE}'. Chọn: server | client-linux | gw | pc" >&2
+        echo "[ERROR] Vai trò không hợp lệ: '${ROLE}'. Chọn: gw | server | pc" >&2
         exit 1
         ;;
 esac
 
+if [[ "${ROLE}" == "gw" || "${ROLE}" == "gateway" ]]; then
+    systemctl enable --now ssh
+fi
+
 # Đồng bộ thời gian hệ thống qua chrony (quan trọng cho chứng chỉ số X.509)
-if systemctl list-unit-files | grep -q "chrony.service"; then
+if systemctl cat chrony.service >/dev/null 2>&1; then
     echo "[*] Kích hoạt và đồng bộ thời gian hệ thống bằng chrony..."
     systemctl enable chrony --now
     systemctl restart chrony

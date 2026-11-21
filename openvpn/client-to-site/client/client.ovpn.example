@@ -14,7 +14,11 @@ nobind
 persist-key
 persist-tun
 remote-cert-tls server
-cipher AES-256-GCM
+verify-x509-name hq-c2s-server name
+data-ciphers AES-256-GCM
+tls-version-min 1.2
+allow-compression no
+mssfix 1400
 auth SHA256
 verb 3
 

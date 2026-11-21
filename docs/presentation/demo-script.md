@@ -1,123 +1,129 @@
-# KỊCH BẢN DEMO TRỰC TIẾP TRÊN PHÒNG HỘI ĐỒNG BẢO VỆ ĐỒ ÁN (LIVE DEMO SCRIPT)
+# Demo OpenVPN với Windows Remote-PC trong 6–8 phút
 
-> **Đề tài 14:** Thiết lập mạng ảo riêng (VPN) Site-to-Site và Client-to-Site: Sử dụng OpenVPN hoặc IPsec để bảo mật kết nối cho nhân viên làm việc từ xa.  
-> **Tài liệu:** `docs/presentation/demo-script.md`  
-> **Thời lượng khuyến nghị:** 10 - 15 phút  
+> Kịch bản 5 máy để trình bày đủ Client-to-Site và Site-to-Site của Chủ đề 14. [Bài 3 máy](three-vm-openvpn-demo.md) chỉ trình bày C2S; xem [đối chiếu yêu cầu](../topic14-audit.md).
 
----
+Nếu bắt đầu từ VM mới, làm theo [kịch bản chi tiết theo từng máy](detailed-lab-runbook.md) trước. Tài liệu dưới là bản trình diễn rút gọn sau khi triển khai và nghiệm thu xong.
 
-## TỔNG QUAN TIẾN TRÌNH TRÌNH DIỄN (5 MÀN LIỀN MẠCH)
+Lab VMware đã triển khai đang dùng IPsec cho S2S. Trước khi chạy kịch bản OpenVPN S2S dưới đây, chuyển cả HQ-GW và Branch-GW sang mode `openvpn` theo [hướng dẫn chuyển mode](../technical-guides/06-ipsec-strongswan-guide.md#triển-khai-và-chuyển-mode-trên-cả-hai-gateway).
 
-```mermaid
-flowchart LR
-    D1["Màn 1: Chuẩn bị & Bật Lab\n(5 VMs sẵn sàng)"] --> D2["Màn 2: Demo Client-to-Site\n(Remote Worker truy cập Portal)"]
-    D2 --> D3["Màn 3: Demo Site-to-Site\n(Ping LAN-LAN & Traceroute)"]
-    D3 --> D4["Màn 4: So Sánh & Chuyển Đổi IPsec\n(switch-vpn-mode & statusall)"]
-    D4 --> D5["Màn 5: Đỉnh Cao An Ninh\n(Wireshark & Thu Hồi CRL)"]
+Demo trên **VMware** dùng **3 Armbian không GUI + 1 Armbian GUI (Branch-PC) + 1 Windows Remote-PC**, chỉ dùng **OpenVPN cho C2S và S2S**. Hoàn tất [triển khai](../../README.md) và [chuẩn bị Armbian/VMware](../technical-guides/09-armbian-vmware-guide.md) trước buổi trình diễn. Windows dùng OpenVPN GUI; xem [yêu cầu Windows](../technical-guides/08-windows-client-requirements.md).
+
+## Chuẩn bị trước giờ demo
+
+- Bật HQ-GW, Branch-GW, HQ-Server chạy Armbian không GUI; Branch-PC chạy Armbian GUI; Remote-PC chạy Windows.
+- Tắt adapter NAT tạm; Remote-PC chỉ nối vào WAN-Net của lab.
+- HQ chạy `openvpn-server@server-c2s` và `openvpn-server@server-s2s`; Branch chạy `openvpn-client@client-s2s`.
+- Remote-PC đã cài OpenVPN Community x64 và import `client1.ovpn` vào OpenVPN GUI; profile đang Disconnect.
+- Mở console/SSH của HQ-GW, terminal và browser trên Armbian GUI Branch-PC; PowerShell, OpenVPN GUI và browser/Wireshark trên Windows.
+- Bash chạy trên đúng Armbian node từ thư mục repo; PowerShell chạy trên Windows. Chạy `sudo -v` trên các terminal Armbian cần sudo trước demo; kiểm tra file NIC `/etc/vpn-lab/interfaces.conf` trên hai gateway.
+- Trên HQ-GW kiểm tra trước:
+
+```bash
+sudo systemctl is-active openvpn-server@server-c2s openvpn-server@server-s2s
+sudo bash scripts/verify-s2s.sh hq-gw
 ```
 
----
+Trên Windows Remote-PC trước khi bắt đầu: chọn `client1` → **Disconnect**, rồi kiểm tra:
 
-### Màn 1: Khởi Động Môi Trường & Giới Thiệu Lab (1 phút)
-1. **Chuẩn bị trước khi lên bục thuyết trình:**
-   - Đảm bảo toàn bộ hạ tầng mạng, máy ảo và dịch vụ đã được triển khai và kiểm tra theo tài liệu tiền kỳ: [lab-setup-guide.md](file:///c:/University%20Coding%20Project/VPN-Site-to-Site-and-Client-to-Site-Implementation/docs/presentation/lab-setup-guide.md).
-   - Khởi động sẵn 2 máy ảo Ubuntu: `VM-SERVER` (Máy chủ), `VM-CLIENT-LINUX` (Máy khách Linux kiêm Chi nhánh) và máy khách Windows (Remote Worker trên máy thật).
-   - Mở sẵn tiện ích `quick-setup.bat` trên Windows và cửa sổ terminal của 2 máy ảo.
-2. **Lời dẫn thuyết minh mẫu:**
-   > *"Kính thưa Thầy/Cô Hội đồng, hệ thống phòng Lab của nhóm đã sẵn sàng với mô hình 3 máy tối ưu hóa: 1 Máy chủ VM-SERVER tích hợp (VPN Gateway, CA và Web Portal), 1 Máy khách Linux VM-CLIENT-LINUX (đóng vai trò Chi nhánh) và 1 Máy khách Windows Remote Worker kết nối qua mạng công cộng WAN (172.16.1.0/24)."*
+```powershell
+ping -n 2 172.16.1.10
+Invoke-WebRequest -UseBasicParsing -Method Head -Uri http://10.74.10.50 -TimeoutSec 3
+```
 
----
+Ping WAN phải được; lệnh HTTP tới HQ dự kiến báo timeout/lỗi khi C2S tắt trong mô hình cô lập. Nếu HTTP đã thành công thì kiểm tra lại adapter, route và proxy trước demo. Kết quả này không thay thế kiểm thử chính sách firewall.
 
-### Màn 2: Demo Client-to-Site OpenVPN — Nhân Viên Từ Xa Kết Nối An Toàn (3 phút)
-1. **Thao tác 1 - Kết nối VPN:**
-   - Trên máy Windows Remote Worker (IP WAN `172.16.1.100`), mở phần mềm **OpenVPN GUI**.
-   - Nhấp chuột phải vào biểu tượng OpenVPN dưới khay hệ thống $\rightarrow$ chọn profile `client-windows` (hoặc `client1`) $\rightarrow$ bấm **Connect**.
-   - Biểu tượng OpenVPN chuyển sang màu **xanh lá cây** báo hiệu kết nối thành công (nhận IP `10.8.0.3`).
-2. **Thao tác 2 - Xác nhận IP và Routing Split-Tunneling bằng `quick-setup.bat`:**
-   - Trên cửa sổ tiện ích [quick-setup.bat](file:///c:/University%20Coding%20Project/VPN-Site-to-Site-and-Client-to-Site-Implementation/quick-setup.bat), nhấn phím **`[3]`**:
-     - Màn hình tự động in bảng định tuyến (Route Print).
-   - **Chỉ rõ trên màn chiếu:**
-     - Card mạng ảo `OpenVPN TAP-Windows6` nhận địa chỉ IP an toàn `10.8.0.3`.
-     - Chỉ thị route dải mạng nội bộ `192.168.10.0/24` và `10.8.0.0/24` trỏ qua Gateway đường hầm `10.8.0.1`.
-     - Default Gateway (`0.0.0.0/0`) vẫn trỏ về card mạng vật lý gốc $\rightarrow$ Minh chứng cơ chế **Split-Tunneling** giúp người dùng vẫn lướt Internet bình thường không bị nghẽn băng thông VPN.
-3. **Thao tác 3 - Truy cập Cổng thông tin nội bộ HQ (Intranet Portal):**
-   - Trên tiện ích `quick-setup.bat`, nhấn phím **`[2]`** (hoặc mở trình duyệt truy cập: `http://10.8.0.1` hoặc `http://192.168.10.1`).
-   - **Điểm nhấn thuyết minh:** Trang Web hiển thị giao diện Cyber Security với widget nhận diện IP nguồn:
-     `SECURE CLIENT DETECTED: 10.8.0.3 (Remote Worker VPN Tunnel)`.
-   - Trên `quick-setup.bat`, bấm phím **`[9]`** (hoặc bấm nút "Test Download Speed" trên Web) để tải tệp 1 MB qua đường hầm mã hóa AES-256-GCM và hiển thị tốc độ truyền dẫn thực tế.
+## Phần 1 — Nhân viên từ xa truy cập HQ (2 phút)
 
----
+Lời dẫn: “Máy Windows của nhân viên đang ở WAN giả lập. Khi bật OpenVPN, client được cấp địa chỉ tunnel và route vào mạng HQ.”
 
-### Màn 3: Demo Site-to-Site OpenVPN Routed Tunnel & Client-to-Client (3 phút)
-1. **Thao tác 1 - Kiểm tra trạng thái đường hầm giữa Server và Client Linux:**
-   - Trên `VM-SERVER`, chạy script kiểm tra tự động:
-     ```bash
-     bash scripts/verify-s2s.sh
-     ```
-   - Chỉ rõ interface ảo `tun1` (IP `10.9.0.1`) trên Server và `tun0` (IP `10.9.0.2`) trên Client Linux ở trạng thái `UP`.
-2. **Thao tác 2 - Ping thông suốt hai chiều giữa các phân vùng mạng:**
-   - Từ `VM-CLIENT-LINUX` (`192.168.20.1` / `172.16.1.20`):
-     ```bash
-     # Ping tới dải mạng nội bộ Trụ sở qua đường hầm S2S:
-     ping -c 4 192.168.10.1
-     
-     # Ping trực tiếp tới máy khách Windows qua cơ chế Client-to-Client:
-     ping -c 4 10.8.0.3
-     ```
-   - Kết quả: **0% packet loss, RTT < 2ms**.
-3. **Thao tác 3 - Traceroute chứng minh đường đi qua đường hầm bảo mật:**
-   - Thực thi lệnh từ Client Linux:
-     ```bash
-     traceroute -n 192.168.10.1
-     ```
-   - **Điểm nhấn thuyết minh:**
-     - Chặng 1: `10.9.0.1` (Tunnel Server IP).
-     - Chặng 2: `192.168.10.1` (HQ LAN đích).
-     - **Tuyệt đối không xuất hiện bất kỳ IP WAN 172.16.1.x nào**, chứng minh dữ liệu được định tuyến hoàn toàn bên trong đường hầm mã hóa.
+Trên **Windows Remote-PC**, nhấp OpenVPN GUI ở system tray → `client1` → **Connect**. Chờ Connected và log `Initialization Sequence Completed`; mở **View Log** để xem cipher/kết nối.
 
----
+Trong **PowerShell Windows**:
 
-### Màn 4: Demo Mở Rộng IPsec strongSwan & Chuyển Đổi Chế Độ An Toàn (3 phút)
-1. **Thao tác 1 - Chuyển đổi linh hoạt sang chế độ IPsec:**
-   - Trên cả 2 Gateway, chạy script chuyển đổi:
-     ```bash
-     sudo bash scripts/switch-vpn-mode.sh ipsec
-     ```
-   - Script tự động dừng OpenVPN S2S, bật strongSwan và cấu hình lại iptables để tránh xung đột định tuyến.
-2. **Thao tác 2 - Kiểm tra trạng thái Security Association (SA):**
-   - Chạy lệnh:
-     ```bash
-     sudo ipsec statusall
-     ```
-   - **Chỉ rõ trên màn chiếu:**
-     - Kết nối `hq-to-branch` đạt trạng thái `ESTABLISHED` (IKEv2 đàm phán thành công qua Diffie-Hellman Group 14 MODP-2048).
-     - Child SA đạt `INSTALLED, TUNNEL` với thuật toán `AES_GCM_16_256`.
-3. **Thao tác 3 - Kiểm tra lại kết nối LAN-to-LAN:**
-   - Từ `VM-CLIENT-LINUX` tiếp tục ping `192.168.10.1` -> Thông suốt hoàn toàn với độ trễ RTT thấp hơn ~45% so với OpenVPN nhờ xử lý trực tiếp trong nhân Linux (In-Kernel XFRM).
+```powershell
+ipconfig
+route print -4
+ping -n 3 10.74.10.50
+Test-NetConnection 10.74.10.50 -Port 80
+Invoke-WebRequest -UseBasicParsing -Method Head -Uri http://10.74.10.50 -TimeoutSec 5
+Start-Process http://10.74.10.50
+```
 
----
+Chỉ ra IP tunnel `10.8.0.x`, route HQ `10.74.10.0/24` qua adapter OpenVPN, ping có phản hồi và HTTP 200. Tải một tài liệu trong trình duyệt. Tên adapter tùy driver, không bắt buộc TAP/Wintun; dùng driver đi kèm bộ cài hiện hành.
 
-### Màn 5: Đỉnh Cao An Ninh — Bắt Gói Tin Wireshark & Thu Hồi Chứng Chỉ CRL (4 phút)
-1. **Thao tác 1 - Bắt gói tin đối chứng trên Wireshark (Mã hóa vs Bản rõ):**
-   - Bật script bắt gói trên card WAN `eth0` của VM-SERVER:
-     ```bash
-     sudo bash scripts/capture-traffic.sh -i eth0 -m all-vpn -c 30
-     ```
-   - Gửi request HTTP từ Remote PC tải tài liệu tài chính nội bộ.
-   - **Chỉ rõ trên Wireshark:** Trên cổng WAN `eth0`, 100% gói tin là `OpenVPN UDP` hoặc `ESP (Protocol 50)`. Payload là chuỗi ngẫu nhiên không thể đọc được.
-   - Khi chuyển bộ lọc sang card LAN `eth1`, thấy rõ gói tin HTTP `GET /files/...` bản rõ sau khi Gateway giải mã.
-2. **Thao tác 2 - Kiểm thử Thu hồi chứng chỉ số (CRL Revocation):**
-   - Giả lập tình huống: Nhân viên sử dụng máy Windows bị mất máy hoặc thôi việc cần thu hồi quyền truy cập.
-   - Trên CA Server (`VM-SERVER`):
-     ```bash
-     cd ~/openvpn-ca
-     ./easyrsa revoke client-windows
-     ./easyrsa gen-crl
-     sudo cp pki/crl.pem /etc/openvpn/server/crl.pem
-     ```
-   - Trên máy Windows Remote Worker, ngắt kết nối và bấm **Connect** lại.
-   - **Kết quả trực tiếp trên máy chiếu:** Kết nối bị từ chối ngay lập tức!
-   - Log OpenVPN GUI hiển thị: `VERIFY ERROR: ... certificate revoked`.
-   - Log server OpenVPN báo lỗi: `TLS_ERROR: CRL check failed for client-windows`.
-   - **Lời kết thuyết minh:** *"Hệ thống đã thu hồi quyền truy cập trong thời gian thực mà không cần khởi động lại máy chủ và không ảnh hưởng tới bất kỳ nhân viên nào khác."*
+C2S đang NAT ra LAN HQ: Portal có thể thấy `10.74.10.1`. IP VPN thực tế xem bằng `ipconfig` trên Windows; IP trên Portal không xác nhận cipher hoặc trạng thái VPN. Có thể dùng `quick-setup.bat` làm menu hỗ trợ.
 
+## Phần 2 — Chi nhánh truy cập HQ (2 phút)
+
+Lời dẫn: “Máy Branch-PC không cài VPN client. Hai gateway OpenVPN định tuyến giữa hai LAN.”
+
+Trên Branch-PC:
+
+```bash
+ping -c 3 -W 2 10.74.10.50
+curl --noproxy '*' --connect-timeout 3 --max-time 10 -I http://10.74.10.50
+traceroute -n -w 1 -m 5 10.74.10.50
+xdg-open http://10.74.10.50
+```
+
+Browser trên **Armbian GUI Branch-PC** mở cùng Portal để chứng minh truy cập ứng dụng qua S2S; máy này không cài VPN client. Nếu chưa có browser mặc định, chuẩn bị browser của đúng image từ trước hoặc mở URL thủ công trong browser đã cài.
+
+Trên HQ-GW:
+
+```bash
+ip -br addr show tun1
+sudo cat /var/log/openvpn/openvpn-s2s-status.log
+```
+
+Chỉ ra tunnel HQ `10.9.0.1`, Branch `10.9.0.2`, client `branch-gw` và HTTP 200. Ghi số liệu ping thực tế; không đặt sẵn RTT. Traceroute minh họa đường đi, không thay thế phép kiểm tra mã hóa.
+
+## Phần 3 — Quan sát dữ liệu trên WAN và LAN (2–3 phút)
+
+Mở hai terminal **trên HQ-GW**, chạy hai capture ở hai interface khác nhau:
+
+```bash
+# Terminal 1 — WAN: helper đọc tên NIC đã khai báo cho VMware:
+source scripts/common/lab-network.sh
+sudo bash scripts/capture-traffic.sh -i "$WAN_IF" -m openvpn-s2s -c 20 -o demo-openvpn-wan.pcap
+
+# Terminal 2 — LAN:
+source scripts/common/lab-network.sh
+sudo bash scripts/capture-traffic.sh -i "$LAN_IF" -m lan-http -c 20 -o demo-http-lan.pcap
+```
+
+Sau khi tcpdump báo đang lắng nghe, từ Branch-PC tạo lưu lượng:
+
+```bash
+curl --noproxy '*' --connect-timeout 3 --max-time 20 -o /dev/null http://10.74.10.50/files/benchmark-payload-1mb.dat
+```
+
+Nếu chưa đủ 20 gói thì tải lại file hoặc nhấn Ctrl+C để kết thúc capture. Chép pcap từ `tests/captures/samples/` trên HQ-GW về Windows qua Shared Folder/WinSCP; Wireshark cần cài trước khi tắt NAT. Chỉ mở pcap thì không cần bắt gói trực tiếp trên Windows.
+
+Trên Windows mở Wireshark → **File → Open** → chọn `demo-openvpn-wan.pcap`, sau đó mở riêng `demo-http-lan.pcap` để đối chứng.
+
+- Mở pcap WAN, lọc `udp.port == 1195`: đối chiếu datagram OpenVPN, không thấy HTTP bản rõ của lần tải.
+- Mở pcap LAN, lọc `http`: thấy request/response HTTP sau khi gateway giải mã.
+- Kiểm tra cipher thực tế trong journal OpenVPN; HTTP trên LAN sau gateway vẫn là bản rõ.
+
+```bash
+sudo journalctl -u openvpn-server@server-s2s -n 50 --no-pager
+```
+
+Lời kết: “Cùng dùng OpenVPN, C2S bảo vệ kết nối nhân viên từ xa; S2S nối hai LAN qua gateway. Dữ liệu ứng dụng được mã hóa trên đoạn WAN giữa các đầu VPN.”
+
+## Ngắt và chuẩn bị lần demo tiếp theo (30 giây)
+
+Trên Windows chọn OpenVPN GUI → `client1` → **Disconnect**. Trong PowerShell:
+
+```powershell
+route print -4
+Invoke-WebRequest -UseBasicParsing -Method Head -Uri http://10.74.10.50 -TimeoutSec 3
+```
+
+Route HQ do OpenVPN đẩy vào phải bị gỡ; trong mô hình cô lập chuẩn, HTTP không truy cập được HQ khi C2S tắt. OpenVPN S2S giữa hai gateway vẫn chạy độc lập. Dùng **Connect** lại để demo lần nữa.
+
+## Bằng chứng và phần mở rộng
+
+Ghi kết quả/đường dẫn ảnh và pcap vào [checklist](../../tests/openvpn-demo.md). Chỉ đánh dấu đạt sau khi chạy thực tế.
+
+Thu hồi chứng chỉ CRL là bài mở rộng nếu còn thời gian, thực hiện sau cùng theo [hướng dẫn PKI](../technical-guides/03-pki-ca-setup.md). Demo chính không cần thu hồi chứng chỉ, chuyển chế độ VPN hay so sánh benchmark.

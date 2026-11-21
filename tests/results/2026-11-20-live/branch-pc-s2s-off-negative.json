@@ -1,0 +1,6 @@
+{
+  "role": "branch-pc",
+  "code": 0,
+  "stdout": "PING 192.168.10.50 (192.168.10.50) 56(84) bytes of data.\n\n--- 192.168.10.50 ping statistics ---\n3 packets transmitted, 0 received, 100% packet loss, time 2055ms\n\n[PASS] Ping blocked with S2S stopped\n[PASS] HTTP blocked with S2S stopped, even with gateway WAN fallback\n",
+  "stderr": ""
+}

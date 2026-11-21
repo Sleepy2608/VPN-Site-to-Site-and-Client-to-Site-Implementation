@@ -1,0 +1,6 @@
+{
+  "role": "branch-pc",
+  "code": 0,
+  "stdout": "branch-pc\naca9aea4-4be2-475c-8643-6f0350324a2a\nlo               UNKNOWN        127.0.0.1/8 ::1/128 \nens33            UP             192.168.20.50/24 fe80::20c:29ff:fe1e:6f8b/64 \nens37            UP             192.168.27.140/24 metric 50 fe80::20c:29ff:fe1e:6f95/64 \ndefault via 192.168.27.2 dev ens37 proto dhcp src 192.168.27.140 metric 50 \ndefault via 192.168.20.1 dev ens33 proto static metric 200 \n10.9.0.0/24 via 192.168.20.1 dev ens33 proto static \n192.168.10.0/24 via 192.168.20.1 dev ens33 proto static \n192.168.20.0/24 dev ens33 proto kernel scope link src 192.168.20.50 \n192.168.27.0/24 dev ens37 proto kernel scope link src 192.168.27.140 metric 50 \n192.168.27.2 dev ens37 proto dhcp scope link src 192.168.27.140 metric 50 \n192.168.10.50 via 192.168.20.1 dev ens33 src 192.168.20.50 uid 0 \n    cache \n{\"ip\":\"192.168.20.50\",\"server_time\":\"2026-11-20T08:16:58+00:00\",\"status\":\"observed\"}\n",
+  "stderr": ""
+}

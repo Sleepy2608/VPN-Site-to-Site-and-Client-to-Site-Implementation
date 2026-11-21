@@ -12,8 +12,9 @@ set -euo pipefail
 
 TARGET="${1:-all}"
 BRANCH_IP="${2:-172.16.1.20}"
-BRANCH_USER="${BRANCH_USER:-vpnadmin}"
-CA_DIR="${CA_DIR:-${HOME}/openvpn-ca}"
+BRANCH_USER="${BRANCH_USER:-${SUDO_USER:-${USER}}}"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source "${SCRIPT_DIR}/../common/pki-paths.sh"
 
 # Kiểm tra thư mục PKI
 if [[ ! -d "${CA_DIR}/pki" ]]; then
@@ -52,29 +53,41 @@ copy_to_local_server() {
 copy_to_branch_gw() {
     echo "[*] Đang chuyển chứng chỉ sang Branch Gateway (${BRANCH_USER}@${BRANCH_IP})..."
 
-    # Tạo tệp tạm để chuyển
-    local tmp_dir
+    if [[ ! "${BRANCH_USER}" =~ ^[a-zA-Z_][a-zA-Z0-9_-]*$ || ! "${BRANCH_IP}" =~ ^[a-zA-Z0-9][a-zA-Z0-9.-]*$ ]]; then
+        echo '[ERROR] Invalid SSH user/host.' >&2; exit 1
+    fi
+    # Private staging dirs on BOTH hosts; never put predictable key names in /tmp.
+    local tmp_dir remote_dir
     tmp_dir="$(mktemp -d)"
-
-    cp "${CA_DIR}/pki/ca.crt" "${tmp_dir}/"
-    cp "${CA_DIR}/ta.key" "${tmp_dir}/"
-    cp "${CA_DIR}/pki/issued/branch-gw.crt" "${tmp_dir}/"
-    cp "${CA_DIR}/pki/private/branch-gw.key" "${tmp_dir}/"
-
-    echo "  -> Đang gửi qua scp tới ${BRANCH_USER}@${BRANCH_IP}:/tmp/..."
-    scp "${tmp_dir}/"* "${BRANCH_USER}@${BRANCH_IP}:/tmp/"
-
-    echo "  -> Cài đặt vào /etc/openvpn/client/ trên Branch Gateway qua SSH..."
+    trap "rm -rf -- '${tmp_dir}'" EXIT
+    for file in ca.crt ta.key branch-gw.crt branch-gw.key; do
+        case "${file}" in
+            ca.crt) src="${CA_DIR}/pki/ca.crt" ;;
+            ta.key) src="${CA_DIR}/ta.key" ;;
+            branch-gw.crt) src="${CA_DIR}/pki/issued/branch-gw.crt" ;;
+            branch-gw.key) src="${CA_DIR}/pki/private/branch-gw.key" ;;
+        esac
+        install -m 600 "${src}" "${tmp_dir}/${file}"
+    done
+    remote_dir="$(ssh "${BRANCH_USER}@${BRANCH_IP}" 'umask 077; mktemp -d /tmp/vpn-lab.XXXXXXXXXX')"
+    if [[ ! "${remote_dir}" =~ ^/tmp/vpn-lab[.][a-zA-Z0-9]{10}$ ]]; then
+        echo '[ERROR] Invalid remote staging path.' >&2; exit 1
+    fi
+    if ! scp -p "${tmp_dir}/"* "${BRANCH_USER}@${BRANCH_IP}:${remote_dir}/"; then
+        ssh "${BRANCH_USER}@${BRANCH_IP}" "rm -rf -- '${remote_dir}'" || true
+        exit 1
+    fi
     ssh -t "${BRANCH_USER}@${BRANCH_IP}" "
-        sudo mkdir -p /etc/openvpn/client
-        sudo mv /tmp/ca.crt /tmp/ta.key /tmp/branch-gw.crt /tmp/branch-gw.key /etc/openvpn/client/
-        sudo chmod 600 /etc/openvpn/client/*.key /etc/openvpn/client/ta.key
-        sudo chmod 644 /etc/openvpn/client/*.crt
-        echo '[Branch-GW] Chứng chỉ đã sẵn sàng tại /etc/openvpn/client/'
+        set -eu
+        trap 'rm -rf -- ${remote_dir}' EXIT
+        sudo install -d -m 755 /etc/openvpn/client
+        sudo install -m 644 ${remote_dir}/ca.crt ${remote_dir}/branch-gw.crt /etc/openvpn/client/
+        sudo install -m 600 ${remote_dir}/ta.key ${remote_dir}/branch-gw.key /etc/openvpn/client/
     "
+    rm -rf -- "${tmp_dir}"
+    trap - EXIT
+    echo '[OK] Branch certificates installed without transferring the CA private key.'
 
-    rm -rf "${tmp_dir}"
-    echo "[+] Đã hoàn tất phân phối chứng chỉ sang Branch Gateway!"
 }
 
 case "${TARGET}" in

@@ -6,7 +6,7 @@ PHẠM VI ÁP DỤNG: TOÀN BỘ CÁN BỘ NHÂN VIÊN TRỤ SỞ VÀ VĂN PHÒN
 ================================================================================
 
 1. MỤC TIÊU & NGUYÊN TẮC BẢO MẬT
-- Mọi tài nguyên nội bộ thuộc dải mạng 192.168.10.0/24 (HQ Internal LAN) chỉ được
+- Mọi tài nguyên nội bộ thuộc dải mạng 10.74.10.0/24 (HQ Internal LAN) chỉ được
   phép truy cập từ bên trong mạng trụ sở hoặc thông qua các kênh truyền được mã hóa
   an toàn bằng giao thức OpenVPN / IPsec IKEv2.
 - Nghiêm cấm mở cổng trực tiếp (Port Forwarding) các dịch vụ cơ sở dữ liệu và Web

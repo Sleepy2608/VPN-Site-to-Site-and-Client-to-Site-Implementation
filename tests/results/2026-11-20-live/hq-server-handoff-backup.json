@@ -1,0 +1,6 @@
+{
+  "role": "hq-server",
+  "code": 0,
+  "stdout": "Final private configuration backup: /root/vpn-lab-backup/final-config-20261120-082222.tar.gz\nCurrent source synchronized: /root/vpn-lab\nFri Nov 20 08:22:22 AM UTC 2026\n",
+  "stderr": ""
+}

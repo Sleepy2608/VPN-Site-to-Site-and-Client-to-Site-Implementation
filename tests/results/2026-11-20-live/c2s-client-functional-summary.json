@@ -1,0 +1,14 @@
+{
+  "client_type": "Temporary Linux network namespace on Branch-GW",
+  "windows_tested": false,
+  "wan_ipv4": "172.16.1.101",
+  "certificate_cn": "client1",
+  "assigned_vpn_ipv4": "10.8.0.2",
+  "hq_identity_ip": "192.168.10.1",
+  "http_code": 200,
+  "download_bytes": 1048576,
+  "sha256": "63f19950a67b8a4728337f1da3ab83f5ee6b821852f13fcdb86eb60873ffa4a4",
+  "cipher": "AES-256-GCM",
+  "source": "Observed SSH command output before reboot; corresponding server log and WAN/LAN PCAP stored alongside this summary",
+  "cleanup": "Temporary client process, network namespace and private profile removed; not left on LAN hosts"
+}

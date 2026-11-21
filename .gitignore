@@ -41,9 +41,9 @@ credentials.txt
 
 # Generated client configs containing private keys/embedded certificates
 # Note: Keep template/example files tracked using .example or template extensions
-openvpn/**/client/*.ovpn
+*.ovpn
 !openvpn/**/client/*.example.ovpn
-!openvpn/**/client/*.ovpn.example
+!*.ovpn.example
 !openvpn/**/client/template.ovpn
 
 # ------------------------------------------------------------------------------
@@ -65,6 +65,7 @@ ipp.txt
 *.cap
 !tests/**/samples/*.pcap
 !tests/**/samples/*.pcapng
+!tests/results/2026-11-20-live/pcap/*.pcap
 
 # ------------------------------------------------------------------------------
 # 4. VIRTUALIZATION & LAB ARTIFACTS (VIRTUALBOX, VMWARE, GNS3, VAGRANT)
@@ -140,3 +141,5 @@ $RECYCLE.BIN/
 # ------------------------------------------------------------------------------
 .plan/
 .agents/
+
+__pycache__/

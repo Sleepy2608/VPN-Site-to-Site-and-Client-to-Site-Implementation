@@ -1,6 +1,6 @@
 # Cấu hình Netplan cho VM-Server (Kiến trúc 3 Máy Ảo)
 # Card eth0: Kết nối mạng WAN giả lập (172.16.1.0/24)
-# Card eth1: Mạng nội bộ Trụ sở chính HQ (192.168.10.0/24)
+# Card eth1: Mạng nội bộ Trụ sở chính HQ (10.74.10.0/24)
 network:
   version: 2
   renderer: networkd
@@ -14,5 +14,4 @@ network:
           - 8.8.8.8
     eth1:
       addresses:
-        - 192.168.10.1/24
-
+        - 10.74.10.1/24

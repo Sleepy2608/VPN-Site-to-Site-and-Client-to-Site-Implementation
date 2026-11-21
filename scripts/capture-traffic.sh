@@ -2,7 +2,7 @@
 # ==============================================================================
 # capture-traffic.sh: Kịch bản tự động hóa bắt gói tin và phân tích mạng VPN
 # Đồ án An ninh mạng: Thiết lập mạng riêng ảo VPN Site-to-Site & Client-to-Site
-# Phù hợp chạy trên Ubuntu 22.04 LTS (HQ Gateway hoặc Branch Gateway)
+# Armbian Generic x86_64 trên VMware (HQ Gateway hoặc Branch Gateway)
 # ==============================================================================
 
 set -euo pipefail
@@ -30,13 +30,15 @@ fi
 
 # Thiết lập thư mục lưu trữ file pcap
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source "${SCRIPT_DIR}/common/lab-network.sh"
 BASE_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
 CAPTURE_DIR="${BASE_DIR}/tests/captures/samples"
 mkdir -p "${CAPTURE_DIR}"
 
 # Cấu hình mặc định
-INTERFACE="eth0"
+INTERFACE="${WAN_IF}"
 PACKET_COUNT=100
+DURATION=30
 FILTER_MODE="all-vpn"
 CUSTOM_FILTER=""
 TIMESTAMP="$(date +'%Y%m%d_%H%M%S')"
@@ -49,8 +51,8 @@ Sử dụng: sudo $0 [TÙY CHỌN]
 Kịch bản bắt gói tin tự động phục vụ kiểm tra và chụp bằng chứng Wireshark.
 
 TÙY CHỌN:
-  -i, --interface <tên_card>   Card mạng cần bắt gói (Mặc định: eth0).
-                               Gợi ý: eth0 (WAN), eth1 (LAN), tun0/tun1 (Tunnel).
+  -i, --interface <tên_card>   Card mạng cần bắt gói (Mặc định: ${WAN_IF}).
+                               Gợi ý: ${WAN_IF} (WAN), ${LAN_IF} (LAN), tun0/tun1 (Tunnel).
   -c, --count <số_lượng>       Số lượng gói tin cần bắt (Mặc định: 100, nhập 0 để bắt liên tục).
   -m, --mode <chế_độ>          Chế độ lọc gói tin:
                                  openvpn-c2s : Lọc OpenVPN Client-to-Site (UDP 1194)
@@ -61,13 +63,14 @@ TÙY CHỌN:
                                  leak-check  : Kiểm tra rò rỉ (bắt HTTP/ICMP bản rõ trên card WAN)
   -f, --filter <chuỗi_lọc>     Bộ lọc tcpdump/pcap tùy biến (ghi đè chế độ lọc -m).
   -o, --output <tên_file>      Tên file lưu trữ (.pcap). Nếu không chỉ định sẽ tự tạo tên theo thời gian.
+  -d, --duration <giây>        Dừng sau thời gian này (mặc định 30, 0 = thủ công).
   -h, --help                   Hiển thị hướng dẫn này và thoát.
 
 VÍ DỤ:
-  sudo $0 -i eth0 -m openvpn-c2s -c 50
-  sudo $0 -i eth0 -m ipsec -c 100
-  sudo $0 -i eth1 -m lan-http -c 50
-  sudo $0 -i eth0 -m leak-check -c 20
+  sudo $0 -i ${WAN_IF} -m openvpn-c2s -c 50
+  sudo $0 -i ${WAN_IF} -m ipsec -c 100
+  sudo $0 -i ${LAN_IF} -m lan-http -c 50
+  sudo $0 -i ${WAN_IF} -m leak-check -c 20
 EOF
     exit 0
 }
@@ -76,6 +79,9 @@ EOF
 OUTPUT_FILE=""
 
 while [[ $# -gt 0 ]]; do
+    if [[ "$1" != -h && "$1" != --help && $# -lt 2 ]]; then
+        echo "[ERROR] Missing value for $1" >&2; exit 2
+    fi
     case "$1" in
         -i|--interface)
             INTERFACE="$2"
@@ -97,16 +103,23 @@ while [[ $# -gt 0 ]]; do
             OUTPUT_FILE="$2"
             shift 2
             ;;
+        -d|--duration)
+            DURATION="$2"; shift 2 ;;
         -h|--help)
             show_usage
             ;;
         *)
             echo -e "${RED}[ERROR] Tùy chọn không hợp lệ: $1${NC}"
-            show_usage
+            exit 2
             ;;
     esac
 done
 
+if [[ ! "${PACKET_COUNT}" =~ ^[0-9]{1,8}$ || ! "${DURATION}" =~ ^[0-9]{1,8}$ ]]; then
+    echo '[ERROR] count/duration must be nonnegative integers.' >&2; exit 2
+fi
+PACKET_COUNT=$((10#${PACKET_COUNT}))
+DURATION=$((10#${DURATION}))
 # Kiểm tra card mạng có tồn tại trên máy không
 if ! ip link show "${INTERFACE}" &>/dev/null; then
     echo -e "${RED}[ERROR] Không tìm thấy card mạng '${INTERFACE}' trên hệ thống.${NC}"
@@ -142,12 +155,12 @@ else
             MODE_DESC="Lưu lượng nội bộ LAN (HTTP Port 80 hoặc ICMP Echo)"
             ;;
         leak-check)
-            TCPDUMP_EXPR="(tcp port 80 or icmp) and (net 192.168.10.0/24 or net 192.168.20.0/24)"
+            TCPDUMP_EXPR="(tcp port 80 or icmp) and (net 10.74.10.0/24 or net 10.74.20.0/24)"
             MODE_DESC="Kiểm tra rò rỉ dữ liệu bản rõ mạng LAN ra cổng ngoài"
             ;;
         *)
             echo -e "${RED}[ERROR] Chế độ lọc '${FILTER_MODE}' không hợp lệ.${NC}"
-            show_usage
+            exit 2
             ;;
     esac
 fi
@@ -198,33 +211,26 @@ echo -e "${BLUE}[*] Đang lắng nghe gói tin trên ${INTERFACE}... Hãy thực
 
 # Thực thi tcpdump
 set +e
-tcpdump "${TCPDUMP_ARGS[@]}" "${TCPDUMP_EXPR}"
+if [[ "${DURATION}" -gt 0 ]]; then
+    timeout --signal=INT "${DURATION}" tcpdump "${TCPDUMP_ARGS[@]}" "${TCPDUMP_EXPR}"
+else
+    tcpdump "${TCPDUMP_ARGS[@]}" "${TCPDUMP_EXPR}"
+fi
 TCPDUMP_STATUS=$?
 set -euo pipefail
 
-echo -e "\n=============================================================================="
-if [[ -f "${OUTPUT_FILE}" && -s "${OUTPUT_FILE}" ]]; then
-    FILE_SIZE=$(du -h "${OUTPUT_FILE}" | awk '{print $1}')
-    PACKET_TOTAL=$(tcpdump -r "${OUTPUT_FILE}" 2>/dev/null | wc -l)
-    
-    echo -e "${GREEN}[THÀNH CÔNG] Đã thu thập và lưu trữ file gói tin thành công!${NC}"
-    echo -e " * Tệp tin pcap  : ${GREEN}${OUTPUT_FILE}${NC}"
-    echo -e " * Dung lượng    : ${YELLOW}${FILE_SIZE}${NC}"
-    echo -e " * Số gói bắt được: ${CYAN}${PACKET_TOTAL} gói${NC}"
-    echo -e ""
-    echo -e "${BLUE}Gợi ý các bước phân tích tiếp theo:${NC}"
-    echo -e " 1. Xem trước danh sách gói tin ngay trong terminal:"
-    echo -e "    ${YELLOW}tcpdump -nn -r \"${OUTPUT_FILE}\" | head -n 20${NC}"
-    echo -e " 2. Xem chi tiết nội dung payload mã hóa:"
-    echo -e "    ${YELLOW}tcpdump -nn -X -r \"${OUTPUT_FILE}\" | head -n 30${NC}"
-    echo -e " 3. Copy file về máy thật để mở bằng giao diện Wireshark trực quan:"
-    echo -e "    Tệp tin: ${GREEN}${OUTPUT_FILE}${NC}"
-else
-    echo -e "${YELLOW}[CẢNH BÁO] Không có gói tin nào được ghi lại hoặc tệp tin rỗng.${NC}"
-    if [[ "${FILTER_MODE}" == "leak-check" ]]; then
-        echo -e "${GREEN}[KẾT LUẬN AN NINH ĐẠT] Không tìm thấy dữ liệu nội bộ rò rỉ ra ngoài cổng WAN!${NC}"
-    else
-        echo -e "Hãy kiểm tra lại xem dịch vụ VPN hoặc lưu lượng test đã được khởi tạo chưa."
+case "${TCPDUMP_STATUS}" in
+    0|124|130) ;; # timeout sends SIGINT to finish the PCAP normally
+    *) echo "[ERROR] tcpdump failed: ${TCPDUMP_STATUS}" >&2; exit "${TCPDUMP_STATUS}" ;;
+esac
+[[ -s "${OUTPUT_FILE}" ]] || { echo '[ERROR] No PCAP written.' >&2; exit 1; }
+PACKET_TOTAL=$(tcpdump -nn -r "${OUTPUT_FILE}" 2>/dev/null | wc -l)
+echo "[OBSERVED] ${PACKET_TOTAL} packets: ${OUTPUT_FILE}"
+if [[ "${FILTER_MODE}" == leak-check && -z "${CUSTOM_FILTER}" ]]; then
+    if [[ "${PACKET_TOTAL}" -gt 0 ]]; then
+        echo '[FAIL] Found cleartext matching the lab LAN filter; inspect PCAP.' >&2; exit 1
     fi
+    echo '[INFO] Zero matching packets. Validate the capture point and active test traffic before drawing a security conclusion.'
+elif [[ "${PACKET_TOTAL}" -eq 0 ]]; then
+    echo '[ERROR] No traffic observed; capture does not prove encryption.' >&2; exit 1
 fi
-echo -e "=============================================================================="

@@ -22,6 +22,8 @@
 *.secrets text eol=lf
 *.service text eol=lf
 *.rules text eol=lf
+*.example text eol=lf
+openvpn/site-to-site/gateway-hq/ccd/* text eol=lf
 
 # Structured data & Docs
 *.json text

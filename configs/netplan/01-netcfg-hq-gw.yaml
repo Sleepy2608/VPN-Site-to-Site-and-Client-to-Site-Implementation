@@ -1,4 +1,4 @@
-# Cấu hình Netplan cho VM-HQ-GW (Trụ sở chính)
+# Armbian HQ-GW; sửa NIC thực tế và renderer theo image (Minimal: networkd).
 # Card eth0: Kết nối vào mạng WAN giả lập (WAN-Net)
 # Card eth1: Kết nối vào mạng LAN trụ sở (HQ-LAN-Net)
 network:
@@ -6,6 +6,8 @@ network:
   renderer: networkd
   ethernets:
     eth0:
+      dhcp4: false
+      dhcp6: false
       addresses:
         - 172.16.1.10/24
       nameservers:
@@ -13,6 +15,8 @@ network:
           - 1.1.1.1
           - 8.8.8.8
     eth1:
+      dhcp4: false
+      dhcp6: false
       addresses:
-        - 192.168.10.1/24
+        - 10.74.10.1/24
 

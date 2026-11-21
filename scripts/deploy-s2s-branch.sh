@@ -17,6 +17,8 @@ fi
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
+source "${SCRIPT_DIR}/common/lab-network.sh"
+check_gateway_interfaces
 CLIENT_S2S_SRC="${REPO_ROOT}/openvpn/site-to-site/gateway-branch/s2s-branch.conf"
 CLIENT_S2S_DEST="/etc/openvpn/client/client-s2s.conf"
 
@@ -30,6 +32,8 @@ if ! command -v openvpn &>/dev/null; then
     apt update -y
     DEBIAN_FRONTEND=noninteractive apt install -y openvpn iptables-persistent netfilter-persistent
 fi
+
+bash "${SCRIPT_DIR}/common/check-openvpn-version.sh"
 
 mkdir -p /etc/openvpn/client /var/log/openvpn
 
@@ -63,6 +67,7 @@ echo "[+] Các chứng chỉ X.509 đã sẵn sàng và được bảo vệ."
 # 3. Nạp tệp cấu hình client-s2s.conf
 echo "[*] Nạp tệp cấu hình ${CLIENT_S2S_DEST}..."
 cp "${CLIENT_S2S_SRC}" "${CLIENT_S2S_DEST}"
+bash "${SCRIPT_DIR}/common/check-openvpn-version.sh" "${CLIENT_S2S_DEST}"
 
 # 4. Kích hoạt IP Forwarding tại tầng nhân kernel
 echo "[*] Kiểm tra chuyển tiếp IPv4 kernel..."
@@ -71,29 +76,8 @@ if [[ ! -f /etc/sysctl.d/99-vpn-forward.conf ]]; then
     echo "net.ipv4.ip_forward = 1" > /etc/sysctl.d/99-vpn-forward.conf
 fi
 
-# 5. Cấu hình tường lửa chuyển tiếp gói tin (FORWARD tun0 <-> eth1)
-echo "[*] Thiết lập quy tắc tường lửa cho interface tun0 và LAN Chi nhánh (eth1)..."
-
-add_rule() {
-    local table="$1"
-    shift
-    if ! iptables -t "${table}" -C "$@" 2>/dev/null; then
-        iptables -t "${table}" -A "$@"
-    fi
-}
-
-# Cho phép chuyển tiếp hai chiều giữa tun0 và card LAN chi nhánh eth1
-add_rule filter FORWARD -i tun0 -o eth1 -j ACCEPT
-add_rule filter FORWARD -i eth1 -o tun0 -j ACCEPT
-
-# Bật TCP MSS Clamping
-add_rule mangle FORWARD -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu
-
-# Lưu vĩnh viễn cấu hình tường lửa
-if command -v netfilter-persistent &>/dev/null; then
-    netfilter-persistent save >/dev/null
-fi
-echo "[+] Quy tắc tường lửa đã được áp dụng và lưu vĩnh viễn."
+# Apply the shared policy before starting the tunnel.
+bash "${SCRIPT_DIR}/common/setup-firewall-rules.sh" branch-gw openvpn
 
 # 6. Khởi động dịch vụ OpenVPN S2S Client
 echo "[*] Khởi động dịch vụ openvpn-client@client-s2s..."
@@ -107,12 +91,12 @@ if systemctl is-active --quiet openvpn-client@client-s2s; then
     echo "[SUCCESS] Dịch vụ OpenVPN S2S Client đang hoạt động!"
     echo "  Interface tun0 IP: $(ip -4 addr show tun0 2>/dev/null | grep -oP '(?<=inet\s)\d+(\.\d+){3}' || echo 'Đang thiết lập...')"
     echo "  Tuyến đường tới mạng HQ LAN:"
-    ip route show | grep "192.168.10" || echo "  (Đang chờ nhận push route...)"
+    ip route show | grep "10.74.10" || echo "  (Đang chờ nhận push route...)"
 else
     echo "[FAILED] Dịch vụ không khởi động được. Xem chi tiết qua: journalctl -u openvpn-client@client-s2s -n 30" >&2
     exit 1
 fi
 
 echo "=============================================================================="
-echo " TRIỂN KHAI S2S PHÍA CHI NHÁNH HOÀN TẤT!"
+echo " Đã khởi động client; chạy verify-s2s.sh branch-gw để xác nhận handshake/route."
 echo "=============================================================================="

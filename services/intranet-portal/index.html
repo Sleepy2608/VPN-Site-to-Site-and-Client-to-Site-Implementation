@@ -4,9 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>HQ Secure Intranet Portal | CyberSec Enterprise</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
@@ -22,12 +19,12 @@
                 </div>
                 <div class="brand-text">
                     <span class="brand-title">CORPORATE SECURE INTRANET</span>
-                    <span class="brand-sub">HQ SITE &bull; 192.168.10.0/24 INTERNAL DOMAIN</span>
+                    <span class="brand-sub">HQ SITE &bull; 10.74.10.0/24 INTERNAL DOMAIN</span>
                 </div>
             </div>
             <div class="system-status">
                 <span class="status-indicator-dot"></span>
-                <span class="status-text mono">GATEWAY LINK: <strong class="text-emerald">ACTIVE</strong></span>
+                <span class="status-text mono">LAB MODE: <strong class="text-cyan">OPENVPN</strong></span>
             </div>
         </div>
     </header>
@@ -52,19 +49,19 @@
             <div class="identity-metrics-grid">
                 <div class="metric-item">
                     <span class="metric-label">ĐỊA CHỈ IP NGUỒN (CLIENT IP)</span>
-                    <span class="metric-value mono text-cyan" id="clientIpDisplay">10.8.0.2</span>
+                    <span class="metric-value mono text-cyan" id="clientIpDisplay">Chưa xác định</span>
                 </div>
                 <div class="metric-item">
                     <span class="metric-label">GIAO TIẾP MẠNG ĐÍCH</span>
-                    <span class="metric-value mono">192.168.10.50:80</span>
+                    <span class="metric-value mono">10.74.10.50:80</span>
                 </div>
                 <div class="metric-item">
                     <span class="metric-label">TRẠNG THÁI MÃ HÓA WAN</span>
-                    <span class="metric-value mono text-emerald" id="cryptoState">AES-256-GCM / SHA256</span>
+                    <span class="metric-value mono text-emerald" id="cryptoState">Đối chiếu log OpenVPN</span>
                 </div>
                 <div class="metric-item">
                     <span class="metric-label">LOẠI ĐƯỜNG TRUYỀN</span>
-                    <span class="metric-value mono text-cyan" id="tunnelType">OpenVPN Remote Access (C2S)</span>
+                    <span class="metric-value mono text-cyan" id="tunnelType">Chưa xác định</span>
                 </div>
             </div>
         </section>
@@ -88,15 +85,15 @@
                     <ul class="telemetry-list">
                         <li>
                             <span class="term">Tên máy chủ ảo:</span>
-                            <span class="value mono">VM-HQ-Server (Ubuntu 22.04 LTS)</span>
+                            <span class="value mono">VM-HQ-Server (Armbian Generic x86_64)</span>
                         </li>
                         <li>
                             <span class="term">Địa chỉ IP nội bộ:</span>
-                            <span class="value mono text-cyan">192.168.10.50/24</span>
+                            <span class="value mono text-cyan">10.74.10.50/24</span>
                         </li>
                         <li>
                             <span class="term">Default Gateway:</span>
-                            <span class="value mono">192.168.10.1 (VM-HQ-GW)</span>
+                            <span class="value mono">10.74.10.1 (VM-HQ-GW)</span>
                         </li>
                         <li>
                             <span class="term">Dịch vụ Web:</span>
@@ -119,14 +116,14 @@
                             <path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"></path>
                             <path d="M2 12h20"></path>
                         </svg>
-                        Đường Hầm Bảo Mật Đang Hoạt Động
+                        Mô Hình Đường Hầm OpenVPN
                     </h2>
                 </div>
                 <div class="card-body">
                     <div class="tunnel-item">
                         <div class="tunnel-top">
                             <span class="tunnel-name mono">TUNNEL 1: CLIENT-TO-SITE</span>
-                            <span class="badge badge-active mono">ONLINE</span>
+                            <span class="badge badge-active mono">CẤU HÌNH</span>
                         </div>
                         <p class="tunnel-desc">Đường hầm truy cập từ xa cho nhân viên lưu động (Remote Workers). Cấp phát IP dải <code class="mono">10.8.0.0/24</code> qua cổng UDP 1194.</p>
                     </div>
@@ -134,9 +131,9 @@
                     <div class="tunnel-item">
                         <div class="tunnel-top">
                             <span class="tunnel-name mono">TUNNEL 2: SITE-TO-SITE</span>
-                            <span class="badge badge-ready mono">ROUTED</span>
+                            <span class="badge badge-ready mono">CẤU HÌNH</span>
                         </div>
-                        <p class="tunnel-desc">Liên kết hai chi nhánh HQ (<code class="mono">192.168.10.0/24</code>) và Branch Office (<code class="mono">192.168.20.0/24</code>) qua Gateway định tuyến.</p>
+                        <p class="tunnel-desc">Liên kết hai chi nhánh HQ (<code class="mono">10.74.10.0/24</code>) và Branch Office (<code class="mono">10.74.20.0/24</code>) qua Gateway định tuyến.</p>
                     </div>
                 </div>
             </div>
@@ -181,7 +178,7 @@
                                 </div>
                             </td>
                             <td><span class="badge badge-confidential mono">CONFIDENTIAL</span></td>
-                            <td class="mono">12.4 KB</td>
+                            <td class="mono">2.4 KB</td>
                             <td class="mono">TEXT / ASCII</td>
                             <td><a href="files/corporate-security-policy-2026.txt" download class="btn-download mono">Tải về (.txt)</a></td>
                         </tr>
@@ -194,7 +191,7 @@
                                 </div>
                             </td>
                             <td><span class="badge badge-restricted mono">RESTRICTED</span></td>
-                            <td class="mono">34.8 KB</td>
+                            <td class="mono">1.6 KB</td>
                             <td class="mono">TEXT / TABULAR</td>
                             <td><a href="files/financial-report-q4-internal.txt" download class="btn-download mono">Tải về (.txt)</a></td>
                         </tr>
@@ -207,7 +204,7 @@
                                 </div>
                             </td>
                             <td><span class="badge badge-test mono">BENCHMARK</span></td>
-                            <td class="mono">1.0 MB</td>
+                            <td class="mono">1 MiB</td>
                             <td class="mono">BINARY / DATA</td>
                             <td><a href="files/benchmark-payload-1mb.dat" download class="btn-download mono">Tải về (.dat)</a></td>
                         </tr>
@@ -220,7 +217,7 @@
     <footer class="footer">
         <div class="footer-container mono">
             <span>ĐỒ ÁN AN NINH MẠNG &bull; THIẾT LẬP MẠNG RIÊNG ẢO VPN SITE-TO-SITE VÀ CLIENT-TO-SITE</span>
-            <span>SECURED BY OPENVPN & IPSEC INFRASTRUCTURE</span>
+            <span>OPENVPN LAB · C2S & S2S</span>
         </div>
     </footer>
 

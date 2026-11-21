@@ -1,5 +1,7 @@
 # TÀI LIỆU KỸ THUẬT: TỔNG QUAN ĐỒ ÁN & MÔ HÌNH BẢO VỆ DỊCH VỤ NỘI BỘ
 
+> Demo hiện tại chỉ dùng OpenVPN C2S/S2S. Thực hiện [quy trình triển khai trong README](../../README.md) và [kịch bản 6–8 phút](../presentation/demo-script.md); nội dung chi tiết bên dưới là tài liệu tham khảo.
+
 > **Dự án:** Thiết lập mạng riêng ảo VPN Site-to-Site và Client-to-Site  
 > **Tài liệu:** `docs/technical-guides/01-project-overview.md`  
 > **Giai đoạn:** Giai đoạn 4 - Dựng Web Server nội bộ HQ & Kiểm tra truy cập từ xa  
@@ -22,19 +24,18 @@ Trong bối cảnh chuyển đổi số và xu hướng làm việc linh hoạt 
 ## 2. Mục Tiêu Đồ Án & Phạm Vi Triển Khai
 
 1. **Triển khai 2 mô hình VPN chuẩn doanh nghiệp:**
-   - **Mô hình 1: Client-to-Site (Remote Access VPN):** Sử dụng OpenVPN phục vụ nhân viên lưu động (`172.16.1.100`) kết nối an toàn vào mạng Trụ sở HQ (`192.168.10.0/24`).
-   - **Mô hình 2: Site-to-Site (LAN-to-LAN VPN):** Kết nối mạng LAN Trụ sở HQ (`192.168.10.0/24`) và Văn phòng Chi nhánh (`192.168.20.0/24`) thông qua cặp Gateway định tuyến, triển khai trên cả hai công nghệ: **OpenVPN Routed Tunnel** và **strongSwan IPsec IKEv2**.
+   - **Mô hình 1: Client-to-Site (Remote Access VPN):** Sử dụng OpenVPN phục vụ nhân viên lưu động (`172.16.1.100`) kết nối an toàn vào mạng Trụ sở HQ (`10.74.10.0/24`).
+   - **Mô hình 2: Site-to-Site (LAN-to-LAN VPN):** Kết nối mạng LAN Trụ sở HQ (`10.74.10.0/24`) và Văn phòng Chi nhánh (`10.74.20.0/24`) thông qua cặp Gateway định tuyến, phương án chính **OpenVPN Routed Tunnel**; **strongSwan IPsec IKEv2** là phần mở rộng tùy chọn.
 2. **Xây dựng ứng dụng dịch vụ nội bộ (HQ Secure Intranet Portal):**
-   - **Trong mô hình 3 Máy (Khuyến nghị chuẩn):** Tích hợp trực tiếp trên `VM-SERVER` (`172.16.1.10`), bảo vệ dịch vụ trên IP nội bộ `192.168.10.1` và VPN Tunnel IP `10.8.0.1`.
-   - **Trong mô hình 5 Máy (Mở rộng):** Đặt tại máy chủ riêng biệt `VM-HQ-Server` (`192.168.10.50`), nằm sâu trong phân vùng mạng nội bộ được cô lập hoàn toàn (`HQ-LAN-Net`).
+   - Đặt tại máy chủ `VM-HQ-Server` (`10.74.10.50`), nằm sâu trong phân vùng mạng nội bộ được cô lập hoàn toàn (`HQ-LAN-Net`).
    - Cung cấp giao diện trực quan giám sát kết nối (Network Identity Inspector) và kho tài liệu bảo mật để đo kiểm thông lượng.
 3. **Đo kiểm thực nghiệm & Phân tích an ninh:**
    - Bắt gói tin Wireshark so sánh lưu lượng bản rõ tại LAN và lưu lượng đã được đóng gói mã hóa tại WAN.
-   - Kiểm tra khả năng chống chịu tấn công và cơ chế thu hồi chứng chỉ tức thời (CRL).
+   - Kiểm tra khả năng chống chịu tấn công và cơ chế thu hồi chứng chỉ (CRL; phiên đang chạy cần ngắt hoặc restart).
 
 ---
 
-## 3. Vai Trò Của Máy Chủ Nội Bộ HQ (Mục Tiêu Bảo Vệ Cốt Lõi)
+## 3. Vai Trò Của Máy Chủ Nội Bộ HQ (`10.74.10.50`)
 
 Máy chủ Web nội bộ đóng vai trò là "mục tiêu bảo vệ cốt lõi" của toàn bộ hệ thống:
 
@@ -45,28 +46,28 @@ flowchart LR
         REMOTE_USER["Remote Worker Laptop\n(172.16.1.100)"]
     end
 
-    subgraph SECURE_GATEWAY ["Vùng Biên Giới Bảo Vệ & Máy Chủ VPN"]
-        HQ_GW["VM-SERVER / HQ-GW\nWAN: 172.16.1.10\nLAN: 192.168.10.1\n[Firewall & OpenVPN Service]"]
+    subgraph SECURE_GATEWAY ["Vùng Biên Giới Bảo Vệ"]
+        HQ_GW["HQ VPN Gateway (VM-HQ-GW)\nWAN: 172.16.1.10\nLAN: 10.74.10.1\n[Firewall & OpenVPN Service]"]
     end
 
-    subgraph ISOLATED_LAN ["Vùng Nội Bộ Tin Cậy"]
-        HQ_SRV["HQ Internal Web Portal\n(LAN: 192.168.10.1 / 192.168.10.50)\n[Chỉ cho phép qua VPN / LAN]"]
+    subgraph ISOLATED_LAN ["Vùng Nội Bộ Tin Cậy (HQ-LAN-Net)"]
+        HQ_SRV["HQ Internal Web Portal\n(VM-HQ-Server: 10.74.10.50)\n[Chỉ lắng nghe trong LAN]"]
     end
 
-    ATTACKER -.->|"Bị chặn truy cập trực tiếp\n(Tường lửa drop traffic WAN)"| HQ_SRV
+    ATTACKER -.->|"Bị chặn truy cập trực tiếp\n(Không có route ra WAN)"| HQ_SRV
     REMOTE_USER ==>|"Đường hầm mã hóa OpenVPN\n(UDP 1194 - AES-256-GCM)"| HQ_GW
-    HQ_GW -->|"Giải mã & Chuyển tiếp Nội bộ"| HQ_SRV
+    HQ_GW -->|"Giải mã & Chuyển tiếp LAN"| HQ_SRV
 ```
 
 ### Nguyên tắc bảo vệ mạng 2 trạng thái:
 * **Trạng thái 1: Khi VPN BẬT (Connected)**
-  - Máy khách được cấp địa chỉ IP ảo `10.8.0.2` và nhận tuyến đường `push route 192.168.10.0/24`.
-  - Mọi yêu cầu HTTP tới `http://192.168.10.50` được đóng gói an toàn vào gói tin OpenVPN UDP 1194.
+  - Máy khách được cấp địa chỉ IP ảo `10.8.0.2` và nhận tuyến đường `push route 10.74.10.0/24`.
+  - Mọi yêu cầu HTTP tới `http://10.74.10.50` được đóng gói an toàn vào gói tin OpenVPN UDP 1194.
   - Cổng nội bộ mở thành công, hiển thị huy hiệu:  
     `[SECURE] Bạn đang kết nối an toàn qua OpenVPN Remote Access (Tunnel IP: 10.8.0.2)`.
 * **Trạng thái 2: Khi VPN TẮT (Disconnected)**
-  - Máy khách mất tuyến đường tới dải `192.168.10.0/24`.
-  - Yêu cầu tới `http://192.168.10.50` bị rớt gói tin ngay lập tức (Request Timed Out).
+  - Máy khách mất tuyến đường tới dải `10.74.10.0/24`.
+  - Yêu cầu tới `http://10.74.10.50` bị rớt gói tin ngay lập tức (Request Timed Out).
   - Chứng minh máy chủ hoàn toàn tàng hình trước môi trường Internet công cộng bên ngoài.
 
 ---
@@ -82,10 +83,10 @@ sudo bash scripts/deploy-hq-portal.sh
 ### 4.2. Kiểm tra truy cập từ xa từ máy khách (`VM-Remote-PC`)
 1. **Kiểm tra tự động bằng script:**
    ```bash
-   bash scripts/verify-portal.sh http://192.168.10.50
+   bash scripts/verify-portal.sh http://10.74.10.50
    ```
 2. **Kiểm tra trực quan bằng trình duyệt:**
-   - Mở trình duyệt Web trên Windows, gõ URL: `http://192.168.10.50`.
+   - Trên Windows Remote-PC, chọn OpenVPN GUI → client1 → Connect, đợi kết nối hoàn tất rồi mở `http://10.74.10.50` trong trình duyệt.
    - Quan sát bảng thông số mạng, tải thử tệp `corporate-security-policy-2026.txt`.
-   - Ngắt kết nối OpenVPN GUI -> F5 tải lại trang -> Xác nhận mất kết nối hoàn toàn.
+   - Chọn Disconnect, kiểm tra `route print -4` và thử `Invoke-WebRequest -UseBasicParsing -Method Head -Uri http://10.74.10.50 -TimeoutSec 3` trong PowerShell để xác nhận không còn truy cập trong mô hình cô lập; không dùng trang cache làm bằng chứng.
 

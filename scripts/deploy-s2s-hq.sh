@@ -21,64 +21,52 @@ SERVER_S2S_SRC="${REPO_ROOT}/openvpn/site-to-site/gateway-hq/s2s-hq.conf"
 SERVER_S2S_DEST="/etc/openvpn/server/server-s2s.conf"
 CCD_SRC="${REPO_ROOT}/openvpn/site-to-site/gateway-hq/ccd"
 CCD_DEST="/etc/openvpn/ccd"
-CA_DIR="${CA_DIR:-/home/${SUDO_USER:-$USER}/openvpn-ca}"
+source "${SCRIPT_DIR}/common/pki-paths.sh"
+source "${SCRIPT_DIR}/common/lab-network.sh"
+check_gateway_interfaces
 
 echo "=============================================================================="
 echo " TRIỂN KHAI OPENVPN SITE-TO-SITE SERVER (HQ GATEWAY - VM-HQ-GW)"
 echo "=============================================================================="
 
+bash "${SCRIPT_DIR}/common/check-openvpn-version.sh"
+
 # 1. Đảm bảo các thư mục cấu hình và log tồn tại
 mkdir -p /etc/openvpn/server "${CCD_DEST}" /var/log/openvpn
 
-# 2. Kiểm tra và đồng bộ chứng chỉ S2S nếu chưa có
-echo "[*] Kiểm tra các tệp chứng chỉ số S2S trong /etc/openvpn/server/..."
-if [[ ! -f "/etc/openvpn/server/hq-s2s-gw.crt" ]]; then
-    if [[ -f "${CA_DIR}/pki/issued/hq-s2s-gw.crt" ]]; then
-        cp "${CA_DIR}/pki/issued/hq-s2s-gw.crt" /etc/openvpn/server/
-        cp "${CA_DIR}/pki/private/hq-s2s-gw.key" /etc/openvpn/server/
-    else
-        echo "[ERROR] Không tìm thấy chứng chỉ hq-s2s-gw.crt tại /etc/openvpn/server/ hoặc ${CA_DIR}" >&2
-        echo "Vui lòng chạy 'bash scripts/pki/init-ca.sh' trước." >&2
+# Standalone S2S deploy also needs CA, DH, TLS key and current CRL.
+for file in ca.crt dh.pem crl.pem hq-s2s-gw.crt hq-s2s-gw.key ta.key; do
+    case "${file}" in
+        hq-s2s-gw.crt) src="${CA_DIR}/pki/issued/${file}" ;;
+        hq-s2s-gw.key) src="${CA_DIR}/pki/private/${file}" ;;
+        ta.key) src="${CA_DIR}/${file}" ;;
+        *) src="${CA_DIR}/pki/${file}" ;;
+    esac
+    mode=644
+    [[ "${file}" != *.key ]] || mode=600
+    if [[ -f "${src}" ]]; then
+        install -m "${mode}" "${src}" "/etc/openvpn/server/${file}"
+    elif [[ ! -s "/etc/openvpn/server/${file}" ]]; then
+        echo "[ERROR] Missing ${file}; run scripts/pki/init-ca.sh first." >&2
         exit 1
     fi
-fi
-
-chmod 600 /etc/openvpn/server/*.key /etc/openvpn/server/ta.key 2>/dev/null || true
-chmod 644 /etc/openvpn/server/*.crt /etc/openvpn/server/*.pem 2>/dev/null || true
+done
 
 # 3. Nạp cấu hình CCD (Client Config Directory) - Rất quan trọng cho S2S
 echo "[*] Thiết lập Client Config Directory (CCD) tại ${CCD_DEST}..."
-cp -r "${CCD_SRC}"/* "${CCD_DEST}/"
+install -m 644 "${CCD_SRC}/branch-gw" "${CCD_DEST}/branch-gw"
+# Remove the obsolete alias that used to authorize another CN.
+rm -f "${CCD_DEST}/branch-gateway"
 chmod 644 "${CCD_DEST}"/*
 echo "[+] Đã cấu hình chỉ thị iroute cho branch-gw: $(cat "${CCD_DEST}/branch-gw")"
 
 # 4. Sao chép tệp cấu hình server-s2s.conf
 echo "[*] Nạp tệp cấu hình ${SERVER_S2S_DEST}..."
 cp "${SERVER_S2S_SRC}" "${SERVER_S2S_DEST}"
+bash "${SCRIPT_DIR}/common/check-openvpn-version.sh" "${SERVER_S2S_DEST}"
 
-# 5. Cấu hình tường lửa iptables cho đường hầm S2S (tun1)
-echo "[*] Thiết lập quy tắc tường lửa cho interface tun1..."
-
-add_rule() {
-    local table="$1"
-    shift
-    if ! iptables -t "${table}" -C "$@" 2>/dev/null; then
-        iptables -t "${table}" -A "$@"
-    fi
-}
-
-# Cho phép lưu lượng hai chiều giữa tun1 (S2S) và eth1 (LAN HQ)
-add_rule filter FORWARD -i tun1 -o eth1 -j ACCEPT
-add_rule filter FORWARD -i eth1 -o tun1 -j ACCEPT
-
-# Mở cổng UDP 1195 trên card WAN eth0
-add_rule filter INPUT -i eth0 -p udp --dport 1195 -j ACCEPT
-
-# Lưu vĩnh viễn cấu hình tường lửa
-if command -v netfilter-persistent &>/dev/null; then
-    netfilter-persistent save >/dev/null
-fi
-echo "[+] Quy tắc tường lửa cho S2S đã được kích hoạt và lưu vĩnh viễn."
+# Apply the shared policy before starting the tunnel.
+bash "${SCRIPT_DIR}/common/setup-firewall-rules.sh" hq-gw openvpn
 
 # 6. Khởi động dịch vụ OpenVPN S2S Server qua systemd
 echo "[*] Khởi động dịch vụ openvpn-server@server-s2s..."

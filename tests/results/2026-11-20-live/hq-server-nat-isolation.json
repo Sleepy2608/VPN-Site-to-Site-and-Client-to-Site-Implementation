@@ -1,0 +1,6 @@
+{
+  "role": "hq-server",
+  "code": 0,
+  "stdout": "ISOLATION_EXIT=0\nNAT isolation check on hq-server\nlo               UNKNOWN        127.0.0.1/8 ::1/128 \nens33            UP             192.168.10.50/24 fe80::20c:29ff:fe89:73f/64 \nens37            DOWN           \ndefault via 192.168.10.1 dev ens33 proto static metric 200 \n10.9.0.0/24 via 192.168.10.1 dev ens33 proto static \n192.168.10.0/24 dev ens33 proto kernel scope link src 192.168.10.50 \n192.168.20.0/24 via 192.168.10.1 dev ens33 proto static \nPING 192.168.20.50 (192.168.20.50) 56(84) bytes of data.\n64 bytes from 192.168.20.50: icmp_seq=1 ttl=62 time=3.12 ms\n64 bytes from 192.168.20.50: icmp_seq=2 ttl=62 time=2.54 ms\n64 bytes from 192.168.20.50: icmp_seq=3 ttl=62 time=2.58 ms\n\n--- 192.168.20.50 ping statistics ---\n3 packets transmitted, 3 received, 0% packet loss, time 2004ms\nrtt min/avg/max/mdev = 2.542/2.748/3.122/0.264 ms\n[PASS] LAN/VPN traffic works while this VM has no NAT IPv4\n",
+  "stderr": "Failed to stop codex-vpn-nat-recover-hq-server.timer: Unit codex-vpn-nat-recover-hq-server.timer not loaded.\n"
+}

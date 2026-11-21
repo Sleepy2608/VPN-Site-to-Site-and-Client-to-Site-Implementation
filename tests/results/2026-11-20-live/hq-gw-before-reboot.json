@@ -1,0 +1,6 @@
+{
+  "role": "hq-gw",
+  "code": 0,
+  "stdout": "hq-gw\n8a18a567-71cf-4d98-a9f6-f9d96e4ce3ae\nlo               UNKNOWN        127.0.0.1/8 ::1/128 \nens33            UP             172.16.1.10/24 fe80::20c:29ff:feda:efff/64 \nens37            UP             192.168.10.1/24 fe80::20c:29ff:feda:ef09/64 \nens38            UP             192.168.27.141/24 fe80::20c:29ff:feda:ef13/64 \ntun1             UNKNOWN        10.9.0.1/24 fe80::6c3d:24a3:2f6d:cc43/64 \ntun0             UNKNOWN        10.8.0.1/24 fe80::e6b0:ab4f:57f8:c676/64 \ndefault via 192.168.27.2 dev ens38 proto dhcp src 192.168.27.141 metric 50 \n10.8.0.0/24 dev tun0 proto kernel scope link src 10.8.0.1 \n10.9.0.0/24 dev tun1 proto kernel scope link src 10.9.0.1 \n172.16.1.0/24 dev ens33 proto kernel scope link src 172.16.1.10 metric 100 \n192.168.10.0/24 dev ens37 proto kernel scope link src 192.168.10.1 metric 101 \n192.168.20.0/24 via 10.9.0.2 dev tun1 \n192.168.27.0/24 dev ens38 proto kernel scope link src 192.168.27.141 metric 50 \nenabled\nenabled\nenabled\nenabled\n",
+  "stderr": ""
+}
