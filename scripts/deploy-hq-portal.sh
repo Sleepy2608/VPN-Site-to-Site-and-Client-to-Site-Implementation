@@ -2,7 +2,7 @@
 # ==============================================================================
 # Script: deploy-hq-portal.sh
 # Mục đích: Tự động cài đặt Nginx và triển khai Cổng thông tin nội bộ
-#           HQ Secure Intranet Portal trên máy chủ VM-HQ-Server (192.168.10.50).
+#           HQ Secure Intranet Portal trên máy chủ VM-HQ-Server (10.74.10.50).
 # Đối tượng thực thi: VM-HQ-Server (Trụ sở chính)
 # Sử dụng: sudo ./deploy-hq-portal.sh
 # ==============================================================================
@@ -21,7 +21,7 @@ PORTAL_SRC="${REPO_ROOT}/services/intranet-portal"
 WEB_ROOT="/var/www/vpn-lab-portal"
 
 echo "=============================================================================="
-echo " TRIỂN KHAI HQ SECURE INTRANET PORTAL (VM-HQ-SERVER: 192.168.10.50)"
+echo " TRIỂN KHAI HQ SECURE INTRANET PORTAL (VM-HQ-SERVER: 10.74.10.50)"
 echo "=============================================================================="
 
 # 1. Cài đặt Nginx Web Server nếu chưa có
@@ -49,10 +49,10 @@ NGINX_CONF="/etc/nginx/sites-available/hq-portal"
 echo "[*] Thiết lập cấu hình Nginx Virtual Host tại ${NGINX_CONF}..."
 cat << 'EOF' > "${NGINX_CONF}"
 server {
-    listen 192.168.10.50:80;
+    listen 10.74.10.50:80;
     listen 127.0.0.1:80;
 
-    server_name portal.corp.vpn.internal 192.168.10.50 localhost;
+    server_name portal.corp.vpn.internal 10.74.10.50 localhost;
     root /var/www/vpn-lab-portal;
     index index.html;
 
@@ -92,8 +92,8 @@ HTTP_STATUS=$(curl --noproxy '*' --connect-timeout 3 --max-time 5 -s -o /dev/nul
 
 if [[ "${HTTP_STATUS}" == "200" ]]; then
     echo "[SUCCESS] Cổng thông tin nội bộ HQ Intranet Portal đã sẵn sàng!"
-    echo "  URL truy cập: http://192.168.10.50"
-    echo "  Kiểm tra API: http://192.168.10.50/api/identity"
+    echo "  URL truy cập: http://10.74.10.50"
+    echo "  Kiểm tra API: http://10.74.10.50/api/identity"
 else
     echo "[FAILED] Nginx phản hồi mã lỗi HTTP: ${HTTP_STATUS}" >&2
     exit 1

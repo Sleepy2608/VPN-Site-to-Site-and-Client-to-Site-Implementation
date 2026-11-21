@@ -20,10 +20,7 @@ else
     OPENVPN_UNIT=openvpn-client@client-s2s
     OPENVPN_CONF=/etc/openvpn/client/client-s2s.conf
 fi
-IPSEC_UNIT=''
-for unit in strongswan-starter.service strongswan.service; do
-    if systemctl cat "${unit}" >/dev/null 2>&1; then IPSEC_UNIT="${unit}"; break; fi
-done
+IPSEC_UNIT=strongswan-starter.service
 case "${MODE}" in
     openvpn)
         [[ -s "${OPENVPN_CONF}" ]] || { echo '[ERROR] Deploy OpenVPN first.' >&2; exit 1; }
@@ -34,7 +31,10 @@ case "${MODE}" in
         systemctl is-active --quiet "${OPENVPN_UNIT}"
         ;;
     ipsec)
-        [[ -n "${IPSEC_UNIT}" && -s /etc/ipsec.conf && -s /etc/ipsec.secrets ]] || { echo '[ERROR] Deploy IPsec and its private PSK first.' >&2; exit 1; }
+        if ! systemctl cat "${IPSEC_UNIT}" >/dev/null 2>&1 || [[ ! -s /etc/ipsec.conf || ! -s /etc/ipsec.secrets ]]; then
+            echo '[ERROR] Deploy strongswan-starter and its private PSK first.' >&2
+            exit 1
+        fi
         bash "${SCRIPT_DIR}/common/check-ipsec-secrets.sh" /etc/ipsec.secrets
         if systemctl cat "${OPENVPN_UNIT}" >/dev/null 2>&1; then
             systemctl disable --now "${OPENVPN_UNIT}"
@@ -46,7 +46,7 @@ case "${MODE}" in
         ;;
     status)
         systemctl is-active "${OPENVPN_UNIT}" || true
-        if [[ -n "${IPSEC_UNIT}" ]]; then systemctl is-active "${IPSEC_UNIT}" || true; fi
+        if systemctl cat "${IPSEC_UNIT}" >/dev/null 2>&1; then systemctl is-active "${IPSEC_UNIT}" || true; fi
         if command -v ipsec >/dev/null 2>&1; then ipsec status || true; fi
         exit 0
         ;;

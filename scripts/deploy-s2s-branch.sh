@@ -91,7 +91,7 @@ if systemctl is-active --quiet openvpn-client@client-s2s; then
     echo "[SUCCESS] Dịch vụ OpenVPN S2S Client đang hoạt động!"
     echo "  Interface tun0 IP: $(ip -4 addr show tun0 2>/dev/null | grep -oP '(?<=inet\s)\d+(\.\d+){3}' || echo 'Đang thiết lập...')"
     echo "  Tuyến đường tới mạng HQ LAN:"
-    ip route show | grep "192.168.10" || echo "  (Đang chờ nhận push route...)"
+    ip route show | grep "10.74.10" || echo "  (Đang chờ nhận push route...)"
 else
     echo "[FAILED] Dịch vụ không khởi động được. Xem chi tiết qua: journalctl -u openvpn-client@client-s2s -n 30" >&2
     exit 1

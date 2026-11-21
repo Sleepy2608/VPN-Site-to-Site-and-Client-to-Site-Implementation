@@ -2,14 +2,14 @@
 # ==============================================================================
 # Script: verify-portal.sh
 # Mục đích: Kiểm tra tự động khả năng truy cập Cổng thông tin nội bộ HQ Server
-#           (192.168.10.50) từ máy khách qua đường hầm bảo mật VPN.
+#           (10.74.10.50) từ máy khách qua đường hầm bảo mật VPN.
 # Sử dụng: ./verify-portal.sh [portal_url]
-# Ví dụ:   ./verify-portal.sh http://192.168.10.50
+# Ví dụ:   ./verify-portal.sh http://10.74.10.50
 # ==============================================================================
 
 set -euo pipefail
 
-TARGET_URL="${1:-http://192.168.10.50}"
+TARGET_URL="${1:-http://10.74.10.50}"
 
 GREEN='\033[0;32m'
 RED='\033[0;31m'

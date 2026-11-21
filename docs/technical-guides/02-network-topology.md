@@ -14,9 +14,9 @@ Hệ thống Lab bao gồm 3 phân vùng mạng vật lý/ảo biệt lập, gia
 
 ```mermaid
 flowchart LR
-    subgraph HQ_SITE ["Trụ sở chính (HQ Site - 192.168.10.0/24)"]
-        HQ_Server["HQ Internal Server\n(Web / Docs Portal)\nIP: 192.168.10.50\nGW: 192.168.10.1"]
-        HQ_GW["HQ VPN Gateway\n(Armbian không GUI)\nLAN: 192.168.10.1\nWAN: 172.16.1.10"]
+    subgraph HQ_SITE ["Trụ sở chính (HQ Site - 10.74.10.0/24)"]
+        HQ_Server["HQ Internal Server\n(Web / Docs Portal)\nIP: 10.74.10.50\nGW: 10.74.10.1"]
+        HQ_GW["HQ VPN Gateway\n(Armbian không GUI)\nLAN: 10.74.10.1\nWAN: 172.16.1.10"]
         HQ_Server <-->|"LAN vSwitch\n(HQ-LAN-Net)"| HQ_GW
     end
 
@@ -24,9 +24,9 @@ flowchart LR
         WAN_SW["Virtual WAN Network Switch\n(WAN-Net)"]
     end
 
-    subgraph BRANCH_SITE ["Văn phòng chi nhánh (Branch Site - 192.168.20.0/24)"]
-        BR_GW["Branch VPN Gateway\n(Armbian không GUI)\nWAN: 172.16.1.20\nLAN: 192.168.20.1"]
-        BR_PC["Branch Client Host\n(Armbian có GUI)\nIP: 192.168.20.50\nGW: 192.168.20.1"]
+    subgraph BRANCH_SITE ["Văn phòng chi nhánh (Branch Site - 10.74.20.0/24)"]
+        BR_GW["Branch VPN Gateway\n(Armbian không GUI)\nWAN: 172.16.1.20\nLAN: 10.74.20.1"]
+        BR_PC["Branch Client Host\n(Armbian có GUI)\nIP: 10.74.20.50\nGW: 10.74.20.1"]
         BR_GW <-->|"LAN vSwitch\n(Branch-LAN-Net)"| BR_PC
     end
 
@@ -50,10 +50,10 @@ flowchart LR
 | Node / Máy ảo | Tên Interface | Địa chỉ IP & Subnet | Default Gateway | Chức năng chi tiết |
 | :--- | :--- | :--- | :--- | :--- |
 | **Mạng WAN Giả lập** | Virtual Switch | `172.16.1.0/24` | Không có | Đại diện cho môi trường Internet công cộng kết nối giữa các chi nhánh |
-| **VM-HQ-GW** (HQ Gateway) | `eth0` (WAN)<br>`eth1` (LAN)<br>`tun0` (C2S)<br>`tun1` (S2S) | `172.16.1.10/24`<br>`192.168.10.1/24`<br>`10.8.0.1/24`<br>`10.9.0.1/24` | None<br>None<br>None<br>None | VPN Gateway tại Trụ sở: phục vụ Remote Worker truy cập và kết nối Site-to-Site sang Chi nhánh |
-| **VM-HQ-Server** (HQ Internal) | `eth0` (LAN) | `192.168.10.50/24` | `192.168.10.1` | Máy chủ Web Portal và tài liệu nội bộ cần được bảo vệ |
-| **VM-Branch-GW** (Branch Gateway) | `eth0` (WAN)<br>`eth1` (LAN)<br>`tun0` (S2S) | `172.16.1.20/24`<br>`192.168.20.1/24`<br>`10.9.0.2/24` | None<br>None<br>None | VPN Gateway tại Chi nhánh: làm đầu cuối VPN kết nối đường hầm Site-to-Site về HQ |
-| **VM-Branch-PC** (Branch Client) | `eth0` (LAN) | `192.168.20.50/24` | `192.168.20.1` | Máy trạm làm việc của nhân viên chi nhánh, truy cập tài nguyên HQ qua VPN Gateway |
+| **VM-HQ-GW** (HQ Gateway) | `eth0` (WAN)<br>`eth1` (LAN)<br>`tun0` (C2S)<br>`tun1` (S2S) | `172.16.1.10/24`<br>`10.74.10.1/24`<br>`10.8.0.1/24`<br>`10.9.0.1/24` | None<br>None<br>None<br>None | VPN Gateway tại Trụ sở: phục vụ Remote Worker truy cập và kết nối Site-to-Site sang Chi nhánh |
+| **VM-HQ-Server** (HQ Internal) | `eth0` (LAN) | `10.74.10.50/24` | `10.74.10.1` | Máy chủ Web Portal và tài liệu nội bộ cần được bảo vệ |
+| **VM-Branch-GW** (Branch Gateway) | `eth0` (WAN)<br>`eth1` (LAN)<br>`tun0` (S2S) | `172.16.1.20/24`<br>`10.74.20.1/24`<br>`10.9.0.2/24` | None<br>None<br>None | VPN Gateway tại Chi nhánh: làm đầu cuối VPN kết nối đường hầm Site-to-Site về HQ |
+| **VM-Branch-PC** (Branch Client) | `eth0` (LAN) | `10.74.20.50/24` | `10.74.20.1` | Máy trạm làm việc của nhân viên chi nhánh, truy cập tài nguyên HQ qua VPN Gateway |
 | **VM-Remote-PC** (Windows 10/11 x64) | Ethernet (WAN)<br>Adapter OpenVPN (C2S) | `172.16.1.100/24`<br>`10.8.0.x/24` (Cấp động) | Không có default gateway trên WAN giả lập; route HQ qua adapter OpenVPN | Nhân viên từ xa kết nối bằng OpenVPN GUI |
 
 ---
@@ -69,8 +69,8 @@ Demo dùng 4 Armbian VM (3 CLI + 1 GUI Branch-PC) và Windows Remote-PC. VMware 
 Tên eth0/eth1 trong các mẫu là placeholder. Đối chiếu MAC bằng `ip -br link`, sửa NIC trong Netplan và khai báo WAN_IF/LAN_IF ở `/etc/vpn-lab/interfaces.conf` trên mỗi gateway. Không cần sửa từng script. Chọn renderer đúng image, xử lý DHCP catch-all của Armbian theo hướng dẫn riêng; Branch-PC GUI dùng NetworkManager nếu image đang dùng backend đó.
 
 - **`WAN-Net`:** Mạng nội bộ kết nối các card WAN (`172.16.1.0/24`).
-- **`HQ-LAN-Net`:** Mạng nội bộ riêng của Trụ sở chính (`192.168.10.0/24`).
-- **`Branch-LAN-Net`:** Mạng nội bộ riêng của Văn phòng Chi nhánh (`192.168.20.0/24`).
+- **`HQ-LAN-Net`:** Mạng nội bộ riêng của Trụ sở chính (`10.74.10.0/24`).
+- **`Branch-LAN-Net`:** Mạng nội bộ riêng của Văn phòng Chi nhánh (`10.74.20.0/24`).
 
 ### 3.2. Ánh xạ Card mạng trên từng máy ảo
 
@@ -169,8 +169,8 @@ bash scripts/common/verify-phase1.sh
 
 ### Bảng tiêu chí đạt yêu cầu (Pass Criteria):
 - [ ] `VM-HQ-GW` ping thông `172.16.1.20` (Branch GW) và `172.16.1.100` (Remote PC).
-- [ ] `VM-HQ-GW` ping thông `192.168.10.50` (HQ Server).
-- [ ] `VM-Branch-GW` ping thông `192.168.20.50` (Branch PC).
+- [ ] `VM-HQ-GW` ping thông `10.74.10.50` (HQ Server).
+- [ ] `VM-Branch-GW` ping thông `10.74.20.50` (Branch PC).
 - [ ] `net.ipv4.ip_forward = 1` trên cả 2 Gateway.
 - [ ] Dịch vụ `chrony` đang hoạt động và đồng bộ thời gian trên toàn bộ máy ảo.
 

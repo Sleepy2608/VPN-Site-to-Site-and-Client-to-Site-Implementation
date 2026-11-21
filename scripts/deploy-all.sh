@@ -105,7 +105,7 @@ deploy_hq_server() {
     
     echo -e "\n${GREEN}${BOLD}=============================================================================="
     echo -e " HOÀN TẤT TRIỂN KHAI HQ INTERNAL SERVER THÀNH CÔNG!"
-    echo -e " Cổng thông tin nội bộ đang lắng nghe tại: http://192.168.10.50:80"
+    echo -e " Cổng thông tin nội bộ đang lắng nghe tại: http://10.74.10.50:80"
     echo -e "==============================================================================${NC}"
 }
 
@@ -113,7 +113,7 @@ deploy_branch_pc() {
     echo -e "\n${CYAN}${BOLD}>>> KIỂM TRA MÁY TRẠM CHI NHÁNH (VM-Branch-PC)...${NC}"
     
     bash "${SCRIPT_DIR}/common/install-prerequisites.sh" pc
-    ping -c 3 -W 2 192.168.20.1
+    ping -c 3 -W 2 10.74.20.1
     bash "${SCRIPT_DIR}/verify-s2s.sh" branch-pc
 }
 

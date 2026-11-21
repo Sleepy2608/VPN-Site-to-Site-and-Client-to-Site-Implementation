@@ -41,13 +41,13 @@ Wireshark đã ngừng hỗ trợ Windows 32-bit sau nhánh 3.6 và các nhánh 
 ipconfig
 route print -4
 ping -n 3 10.8.0.1
-ping -n 3 192.168.10.50
-Test-NetConnection 192.168.10.50 -Port 80
-Invoke-WebRequest -UseBasicParsing -Method Head -Uri http://192.168.10.50 -TimeoutSec 5
-Start-Process http://192.168.10.50
+ping -n 3 10.74.10.50
+Test-NetConnection 10.74.10.50 -Port 80
+Invoke-WebRequest -UseBasicParsing -Method Head -Uri http://10.74.10.50 -TimeoutSec 5
+Start-Process http://10.74.10.50
 ```
 
-IP tunnel phải thuộc `10.8.0.0/24`, route HQ đi qua adapter OpenVPN. Tên adapter phụ thuộc driver/phiên bản, không bắt buộc mang tên TAP hay Wintun. C2S hiện dùng NAT nên Portal có thể thấy `192.168.10.1`; IP client thật xem bằng `ipconfig`.
+IP tunnel phải thuộc `10.8.0.0/24`, route HQ đi qua adapter OpenVPN. Tên adapter phụ thuộc driver/phiên bản, không bắt buộc mang tên TAP hay Wintun. C2S hiện dùng NAT nên Portal có thể thấy `10.74.10.1`; IP client thật xem bằng `ipconfig`.
 
 Ngắt bằng OpenVPN GUI → `client1` → **Disconnect**. Kiểm tra route HQ đã được gỡ; trong mô hình cô lập, truy cập HQ sẽ thất bại sau khi ngắt.
 

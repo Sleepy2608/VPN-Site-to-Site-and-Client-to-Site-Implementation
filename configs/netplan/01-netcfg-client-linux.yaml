@@ -1,6 +1,6 @@
 # Cấu hình Netplan cho VM-Client-Linux (Kiến trúc 3 Máy Ảo)
 # Card eth0: Kết nối mạng WAN giả lập (172.16.1.0/24)
-# Card eth1: Mạng nội bộ Văn phòng Chi nhánh Branch (192.168.20.0/24)
+# Card eth1: Mạng nội bộ Văn phòng Chi nhánh Branch (10.74.20.0/24)
 network:
   version: 2
   renderer: networkd
@@ -14,4 +14,4 @@ network:
           - 8.8.8.8
     eth1:
       addresses:
-        - 192.168.20.1/24
+        - 10.74.20.1/24

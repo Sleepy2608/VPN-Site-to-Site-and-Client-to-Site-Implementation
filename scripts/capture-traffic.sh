@@ -155,7 +155,7 @@ else
             MODE_DESC="Lưu lượng nội bộ LAN (HTTP Port 80 hoặc ICMP Echo)"
             ;;
         leak-check)
-            TCPDUMP_EXPR="(tcp port 80 or icmp) and (net 192.168.10.0/24 or net 192.168.20.0/24)"
+            TCPDUMP_EXPR="(tcp port 80 or icmp) and (net 10.74.10.0/24 or net 10.74.20.0/24)"
             MODE_DESC="Kiểm tra rò rỉ dữ liệu bản rõ mạng LAN ra cổng ngoài"
             ;;
         *)

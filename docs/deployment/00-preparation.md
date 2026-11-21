@@ -27,8 +27,8 @@ Ta tạo ba switch ảo bằng **LAN Segment**. Tên `WAN-Net` chỉ có nghĩa 
 | LAN Segment | Subnet sẽ đặt trong hệ điều hành | NIC nối vào |
 | --- | --- | --- |
 | WAN-Net | 172.16.1.0/24 | WAN HQ-GW, WAN Branch-GW, WAN Windows |
-| HQ-LAN-Net | 192.168.10.0/24 | LAN HQ-GW, HQ-Server |
-| Branch-LAN-Net | 192.168.20.0/24 | LAN Branch-GW, Branch-PC |
+| HQ-LAN-Net | 10.74.10.0/24 | LAN HQ-GW, HQ-Server |
+| Branch-LAN-Net | 10.74.20.0/24 | LAN Branch-GW, Branch-PC |
 
 Trong cách LAN Segment, **không nhập subnet/IP ở VMware**; ta sẽ đặt IP tĩnh bằng Netplan hoặc IPv4 Properties ở các hướng dẫn từng máy. Cũng không tạo LAN Segment cho `10.8.0.0/24` hoặc `10.9.0.0/24`: OpenVPN tự tạo mạng tunnel.
 
@@ -76,7 +76,7 @@ HQ-GW cần **hai card lab và một NAT tạm**. Card đầu đã được gán
 | Card trong VMware HQ-GW | Chọn trong Network connection | Vai trò | IP sẽ đặt sau |
 | --- | --- | --- | --- |
 | Network Adapter | LAN segment → WAN-Net | WAN HQ | 172.16.1.10/24 |
-| Network Adapter 2 | LAN segment → HQ-LAN-Net | LAN HQ | 192.168.10.1/24 |
+| Network Adapter 2 | LAN segment → HQ-LAN-Net | LAN HQ | 10.74.10.1/24 |
 | Network Adapter 3 | NAT | Internet tạm | DHCP |
 
 Nếu VM đã có đủ card từ trước, chọn lại đúng loại kết nối cho từng card thay vì thêm card trùng. Trên VM đã có cấu hình IP, đối chiếu MAC trước khi đổi vai trò card.
@@ -92,7 +92,7 @@ Nếu VM đã có đủ card từ trước, chọn lại đúng loại kết n�
 | Card trong VMware Branch-GW | Kết nối | IP sẽ đặt sau |
 | --- | --- | --- |
 | Network Adapter | LAN segment → WAN-Net | 172.16.1.20/24 |
-| Network Adapter 2 | LAN segment → Branch-LAN-Net | 192.168.20.1/24 |
+| Network Adapter 2 | LAN segment → Branch-LAN-Net | 10.74.20.1/24 |
 | Network Adapter 3 | NAT | DHCP |
 
 Hai card WAN của HQ-GW và Branch-GW cùng vào `WAN-Net`. Hai card LAN đi vào **hai segment khác nhau**, vì đây là hai site riêng.
@@ -106,7 +106,7 @@ Hai card WAN của HQ-GW và Branch-GW cùng vào `WAN-Net`. Hai card LAN đi v�
 
 | Card trong VMware HQ-Server | Kết nối | IP sẽ đặt sau |
 | --- | --- | --- |
-| Network Adapter | LAN segment → HQ-LAN-Net | 192.168.10.50/24 |
+| Network Adapter | LAN segment → HQ-LAN-Net | 10.74.10.50/24 |
 | Network Adapter 2 | NAT | DHCP |
 
 HQ-Server chỉ cùng LAN với card LAN của HQ-GW; không nối trực tiếp card nào của máy này vào WAN-Net hoặc Branch-LAN-Net.
@@ -120,7 +120,7 @@ HQ-Server chỉ cùng LAN với card LAN của HQ-GW; không nối trực tiếp
 
 | Card trong VMware Branch-PC | Kết nối | IP sẽ đặt sau |
 | --- | --- | --- |
-| Network Adapter | LAN segment → Branch-LAN-Net | 192.168.20.50/24 |
+| Network Adapter | LAN segment → Branch-LAN-Net | 10.74.20.50/24 |
 | Network Adapter 2 | NAT | DHCP |
 
 Branch-PC không có card trực tiếp ở HQ-LAN-Net. Sau khi dựng S2S, nó phải gửi traffic tới HQ qua Branch-GW.
@@ -148,10 +148,10 @@ Trước khi bật năm VM, trên Windows host:
 1. Chọn **Edit → Virtual Network Editor**.
 2. Nếu cần chỉnh cấu hình, bấm **Change Settings** để mở quyền quản trị.
 3. Chọn mạng đang có **Type: NAT**, thường là **VMnet8**.
-4. Đọc Subnet IP và Subnet mask. Subnet NAT không được chồng lấn với các mạng `172.16.1.0/24`, `192.168.10.0/24`, `192.168.20.0/24`, `10.8.0.0/24`, `10.9.0.0/24`.
+4. Đọc Subnet IP và Subnet mask. Subnet NAT không được chồng lấn với các mạng `172.16.1.0/24`, `10.74.10.0/24`, `10.74.20.0/24`, `10.8.0.0/24`, `10.9.0.0/24`.
 5. Nếu không trùng, giữ cấu hình NAT/DHCP hiện có và đóng cửa sổ. Trong cách LAN Segment, không tạo thêm WAN-Net/HQ-LAN-Net/Branch-LAN-Net tại Virtual Network Editor.
 
-Nếu subnet NAT đang trùng với lab, ghi lại cấu hình cũ và kiểm tra những VM khác có đang dùng NAT đó không. Chỉ trên môi trường lab riêng, đổi NAT sang một dải /24 còn trống, chẳng hạn `192.168.250.0/24` nếu không trùng mạng host/VPN khác, kiểm tra DHCP range và NAT gateway đều thuộc subnet mới, rồi Apply. Nếu đang dùng NAT cho công việc khác, giữ mạng đó và chọn một mạng NAT tạm khác cho lab thay vì đổi dùng chung tùy tiện.
+Kiểm tra các subnet lab với cả Wi-Fi/Ethernet và bảng route do VPN khác cài trên các máy tham gia. Nếu có mạng chồng lấn, chọn subnet lab trống và cập nhật đồng bộ địa chỉ LAN, route, OpenVPN, firewall và Portal. VMnet8 có thể phục vụ nhiều VM cùng lúc.
 
 Ở giai đoạn cài gói, giữ cả năm NIC NAT Connected. Khi nghiệm thu, ngắt **chỉ các NIC NAT** theo [phần nghiệm thu](06-acceptance.md); các NIC LAN Segment vẫn giữ Connected.
 
@@ -204,13 +204,13 @@ Chỉ dùng nhánh này nếu không thể chọn LAN Segment. Nếu đã làm c
 | Tên vai trò trong hướng dẫn | VMnet ví dụ | Subnet IP | Mask |
 | --- | --- | --- | --- |
 | WAN-Net | VMnet2 | 172.16.1.0 | 255.255.255.0 |
-| HQ-LAN-Net | VMnet3 | 192.168.10.0 | 255.255.255.0 |
-| Branch-LAN-Net | VMnet4 | 192.168.20.0 | 255.255.255.0 |
+| HQ-LAN-Net | VMnet3 | 10.74.10.0 | 255.255.255.0 |
+| Branch-LAN-Net | VMnet4 | 10.74.20.0 | 255.255.255.0 |
 
 5. Trong Settings từng VM, chọn **Custom: Specific virtual network** trên các card lab. Dùng VMnet2 ở mọi vị trí ghi WAN-Net, VMnet3 ở HQ-LAN-Net, VMnet4 ở Branch-LAN-Net.
 6. NIC NAT tạm vẫn chọn NAT riêng như trước. IP tĩnh bên trong guest giữ nguyên theo hướng dẫn từng máy.
 
-Ở nhánh này, bảng subnet chỉ định mạng lab, không đặt IP của gateway VM. HQ-GW vẫn phải có `192.168.10.1`, Branch-GW vẫn có `192.168.20.1` trong guest. Nếu phiên bản đang dùng không có Virtual Network Editor, cần dùng bản Workstation có tính năng này để thực hiện nhánh Custom.
+Ở nhánh này, bảng subnet chỉ định mạng lab, không đặt IP của gateway VM. HQ-GW vẫn phải có `10.74.10.1`, Branch-GW vẫn có `10.74.20.1` trong guest. Nếu phiên bản đang dùng không có Virtual Network Editor, cần dùng bản Workstation có tính năng này để thực hiện nhánh Custom.
 
 ### 2.12 Checklist hoàn thành phần VMware
 

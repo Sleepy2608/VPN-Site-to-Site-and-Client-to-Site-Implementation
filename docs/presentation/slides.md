@@ -19,7 +19,7 @@ Nguyễn Lê Huy Tâm, Nguyễn Sun Sin, Huỳnh Đình Chấn.
 - 5 VM trên VMware: HQ-GW, Branch-GW, HQ-Server chạy Armbian không GUI; Branch-PC chạy Armbian GUI; Remote-PC chạy Windows.
 - Armbian dùng image Generic UEFI x86_64 phù hợp VMware; đối chiếu backend Netplan và tên NIC theo MAC, không mặc định eth0/eth1.
 - OpenVPN GUI hiện hành cần Windows 10 trở lên; baseline lab Windows 10 22H2 x64, khuyến nghị Windows 11 x64 còn được hỗ trợ. Xem [nguồn/yêu cầu](../technical-guides/08-windows-client-requirements.md).
-- WAN 172.16.1.0/24, HQ LAN 192.168.10.0/24, Branch LAN 192.168.20.0/24.
+- WAN 172.16.1.0/24, HQ LAN 10.74.10.0/24, Branch LAN 10.74.20.0/24.
 - WAN là mạng giả lập. Tạo VM/mạng thủ công, triển khai dịch vụ bằng Bash theo node.
 
 ## Slide 4 — Cấu hình OpenVPN
@@ -32,8 +32,8 @@ Nguyễn Lê Huy Tâm, Nguyễn Sun Sin, Huỳnh Đình Chấn.
 ## Slide 5 — Demo Client-to-Site
 
 - Remote-PC chọn Connect; quan sát `ipconfig`, `route print -4` và log OpenVPN GUI.
-- Ping HQ-Server và truy cập http://192.168.10.50.
-- C2S đang NAT nên Portal có thể thấy IP gateway 192.168.10.1.
+- Ping HQ-Server và truy cập http://10.74.10.50.
+- C2S đang NAT nên Portal có thể thấy IP gateway 10.74.10.1.
 - Cuối demo chọn Disconnect để ngắt C2S; S2S độc lập vẫn hoạt động.
 
 ## Slide 6 — Demo Site-to-Site

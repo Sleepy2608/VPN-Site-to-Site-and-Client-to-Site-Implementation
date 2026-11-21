@@ -2,7 +2,9 @@
 
 **Mô hình đang triển khai: 5 máy — hai gateway, hai host LAN và Windows remote.**
 
-**Đã triển khai và kiểm tra trực tiếp bốn Linux ngày 20/11/2026.** S2S, Portal HQ, C2S bằng client Linux tạm, chặn route đi vòng, cô lập NAT và khôi phục sau reboot đã được kiểm tra. Windows Remote-PC do người dùng tự cấu hình. Xem **[kết quả thực tế và IP quản trị](docs/deployment/live-lab-status.md)** cùng log/PCAP đối chứng.
+**Địa chỉ LAN đang dùng trên lab:** HQ `10.74.10.0/24`, Branch `10.74.20.0/24`. Portal dùng `http://10.74.10.50`. Qua SSH đã xác nhận S2S hai chiều, HTTP và SHA-256 của file tải từ Branch. HQ-GW ghi nhận `client1` kết nối lại qua C2S và được gửi route HQ mới. Xem [kết quả và IP SSH quản trị](docs/deployment/live-lab-status.md) cùng [cách chuyển địa chỉ trên lab đã dựng](docs/deployment/README.md#2-chuyển-địa-chỉ-cho-lab-đã-dựng).
+
+**Mode đang chạy trên VMware:** strongSwan IPsec cho S2S và OpenVPN cho C2S. Để trình diễn bài OpenVPN S2S bên dưới, chuyển mode trên cả hai gateway theo [hướng dẫn chuyển đổi](docs/technical-guides/06-ipsec-strongswan-guide.md#triển-khai-và-chuyển-mode-trên-cả-hai-gateway). Có thể dùng [script cài lại profile OpenVPN GUI](scripts/setup-c2s-windows.ps1) trong Windows Remote-PC.
 
 **Bắt đầu tại [bộ hướng dẫn triển khai từng máy](docs/deployment/README.md).** Bộ tài liệu có sơ đồ, bảng NIC/IP, phần chuẩn bị VMware, YAML đầy đủ kể cả NAT tạm, lệnh cài đặt, chuyển chứng chỉ, kết quả kỳ vọng và xử lý lỗi riêng từng máy:
 
@@ -35,10 +37,10 @@ Thành viên: [Nguyen Le Huy Tam](https://github.com/Sleepy2608), [Nguyen Sun Si
 
 ```mermaid
 flowchart LR
-    Remote["Remote-PC Windows\n172.16.1.100"] -->|"OpenVPN C2S · UDP 1194"| HQ["HQ-GW Armbian CLI\nWAN 172.16.1.10\nLAN 192.168.10.1"]
-    PC["Branch-PC Armbian GUI\n192.168.20.50"] --- Branch["Branch-GW Armbian CLI\nLAN 192.168.20.1\nWAN 172.16.1.20"]
+    Remote["Remote-PC Windows\n172.16.1.100"] -->|"OpenVPN C2S · UDP 1194"| HQ["HQ-GW Armbian CLI\nWAN 172.16.1.10\nLAN 10.74.10.1"]
+    PC["Branch-PC Armbian GUI\n10.74.20.50"] --- Branch["Branch-GW Armbian CLI\nLAN 10.74.20.1\nWAN 172.16.1.20"]
     Branch <-->|"OpenVPN S2S · UDP 1195"| HQ
-    HQ --- Server["HQ-Server Armbian CLI\n192.168.10.50\nNginx Portal"]
+    HQ --- Server["HQ-Server Armbian CLI\n10.74.10.50\nNginx Portal"]
 ```
 
 | Nội dung | Công cụ/cấu hình |
@@ -49,7 +51,7 @@ flowchart LR
 | VPN nhân viên từ xa | OpenVPN GUI trên Windows Remote-PC → HQ-GW, tunnel `10.8.0.0/24` |
 | VPN liên chi nhánh | OpenVPN Branch-GW → HQ-GW, tunnel `10.9.0.0/24` |
 | Chứng chỉ | Easy-RSA, xác thực X.509 và `tls-crypt` |
-| Tài nguyên demo | Nginx tại `http://192.168.10.50` và tệp tải mẫu 1 MiB |
+| Tài nguyên demo | Nginx tại `http://10.74.10.50` và tệp tải mẫu 1 MiB |
 | Quan sát | Ping, route, trạng thái OpenVPN, tcpdump/Wireshark |
 
 Đây là triển khai **theo từng node bằng Bash**: tự tạo VM và mạng trước, sau đó chạy `deploy-all.sh` trên từng Armbian. Script không tạo VM, tự cài GUI hoặc tự áp dụng Netplan. Gateway Linux cần OpenVPN **2.5 trở lên** (tương thích gói Ubuntu 22.04); từ 2.6 script tắt DCO để việc quan sát `tun0`/`tun1` nhất quán. Dùng image **Generic UEFI x86_64** phù hợp VMware/host Intel–AMD, không dùng image Armbian cho board ARM. Xem [chuẩn bị Armbian trên VMware](docs/technical-guides/09-armbian-vmware-guide.md).
@@ -65,8 +67,8 @@ Mô hình có 5 VM: 3 Armbian Minimal/CLI không GUI, 1 Armbian Desktop làm Bra
 | Mạng | Subnet | Card nối vào |
 | --- | --- | --- |
 | WAN-Net | `172.16.1.0/24` | WAN HQ-GW, WAN Branch-GW, Remote-PC |
-| HQ-LAN-Net | `192.168.10.0/24` | LAN HQ-GW, HQ-Server |
-| Branch-LAN-Net | `192.168.20.0/24` | LAN Branch-GW, Branch-PC |
+| HQ-LAN-Net | `10.74.10.0/24` | LAN HQ-GW, HQ-Server |
+| Branch-LAN-Net | `10.74.20.0/24` | LAN Branch-GW, Branch-PC |
 
 WAN-Net chỉ đóng vai trò WAN giả lập. Cấu hình IP trong từng VM; tên LAN Segment không tự gán IP. Hai mạng tunnel OpenVPN không cần tạo virtual switch riêng. Hai gateway cần 2 NIC lab; HQ-Server và Branch-PC cần 1 NIC LAN, Windows cần 1 NIC WAN.
 
@@ -164,10 +166,10 @@ sudo bash scripts/deploy-all.sh branch-pc
 ```powershell
 ipconfig
 route print -4
-ping -n 3 192.168.10.50
-Test-NetConnection 192.168.10.50 -Port 80
-Invoke-WebRequest -UseBasicParsing -Method Head -Uri http://192.168.10.50 -TimeoutSec 5
-Start-Process http://192.168.10.50
+ping -n 3 10.74.10.50
+Test-NetConnection 10.74.10.50 -Port 80
+Invoke-WebRequest -UseBasicParsing -Method Head -Uri http://10.74.10.50 -TimeoutSec 5
+Start-Process http://10.74.10.50
 ```
 
 Ngắt bằng OpenVPN GUI → `client1` → **Disconnect**. Không chạy `deploy-all.sh` hoặc `systemctl` trên Windows. Có thể dùng `quick-setup.bat` làm menu hỗ trợ; các chức năng SSH/SCP cần OpenSSH Client hoặc phần mềm tương đương. Xem [hướng dẫn Windows chi tiết](docs/technical-guides/08-windows-client-requirements.md).
@@ -192,7 +194,7 @@ bash scripts/verify-s2s.sh branch-pc
 bash scripts/verify-portal.sh
 ```
 
-Portal hiển thị IP mà Nginx quan sát được. C2S hiện dùng NAT nên có thể thấy `192.168.10.1`; kiểm tra IP tunnel bằng `ipconfig` trên Windows Remote-PC. Trạng thái/cipher của VPN phải đối chiếu log OpenVPN và gói tin, không suy ra chỉ từ IP trên trang Web.
+Portal hiển thị IP mà Nginx quan sát được. C2S hiện dùng NAT nên có thể thấy `10.74.10.1`; kiểm tra IP tunnel bằng `ipconfig` trên Windows Remote-PC. Trạng thái/cipher của VPN phải đối chiếu log OpenVPN và gói tin, không suy ra chỉ từ IP trên trang Web.
 
 ## 5. Tài liệu
 

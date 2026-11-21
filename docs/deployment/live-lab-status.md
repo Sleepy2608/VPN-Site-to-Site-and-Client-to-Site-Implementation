@@ -1,4 +1,40 @@
-# Kết quả triển khai trực tiếp trên VMware ngày 20 tháng 11 năm 2026
+# Kết quả triển khai trực tiếp trên VMware
+
+## Triển khai IPsec ngày 21/11/2026
+
+**Mode đang chạy** là IPsec Site-to-Site với strongSwan 6.0.4 trên HQ-GW và Branch-GW. OpenVPN Client-to-Site chạy trên HQ-GW UDP 1194. Branch-GW chủ động thiết lập IKEv2, HQ-GW nhận kết nối. PSK riêng được lưu trên hai gateway với quyền `600`.
+
+| Phép thử qua SSH | Kết quả |
+| --- | --- |
+| Hai gateway | Mỗi đầu có một IKE SA `ESTABLISHED` và CHILD SA `INSTALLED, TUNNEL`, dùng ESP `AES_GCM_16_256`. Chính sách XFRM khớp hai LAN `10.74.10.0/24` và `10.74.20.0/24`. |
+| HQ-Server ↔ Branch-PC | Ping khởi tạo từ mỗi LAN đều nhận 3/3 phản hồi. Branch-PC nhận HTTP 200 và API thấy nguồn `10.74.20.50`. |
+| Tải file qua IPsec | Đúng 1.048.576 byte và SHA-256 trùng file gốc. Trong lần tải đối chứng, bộ đếm XFRM trên HQ-GW tăng 757 gói chiều ra và 147 gói chiều vào. |
+| Wireshark | Capture WAN hướng ra HQ-GW ghi 120 gói ESP và 0 gói mang địa chỉ LAN bản rõ theo bộ lọc. Capture LAN ghi 120 gói TCP/80, có HTTP GET của file. Cả hai capture dừng ở 120 gói. [WAN](../../tests/captures/samples/ipsec-s2s-wan-2026-11-21.pcap) · [LAN](../../tests/captures/samples/ipsec-s2s-lan-2026-11-21.pcap) |
+| Mất IPsec tại Branch | Khi dừng strongSwan và thử route WAN dự phòng, ping và HTTP đều thất bại, counter DROP tăng 5 gói và capture WAN hướng ra ghi 0 gói liên LAN bản rõ. Sau khi dọn route thử và khởi động lại dịch vụ, CHILD SA và HTTP phục hồi. |
+| Đổi mode S2S | IPsec → OpenVPN → IPsec. Ping hai chiều và HTTP đạt sau mỗi lần đổi. Tiến trình C2S giữ cùng PID và phiên `client1` vẫn xuất hiện trong status. |
+| C2S trên HQ-GW | `verify-c2s.sh server` đạt 6/6, có `client1` từ `172.16.1.100`. HTTP và GUI phía Windows do người dùng tự nghiệm thu. |
+
+Hai gateway bật `strongswan-starter` tự khởi động và đã lưu firewall qua `netfilter-persistent`. Bản sao firewall trước khi chuyển mode ở `/root/vpn-lab-backup/ipsec-20261121/` trên mỗi gateway. Lần này có kiểm tra khởi động lại dịch vụ IPsec ở Branch. Kiểm tra reboot toàn bộ VM với mode IPsec và thử sai PSK vẫn chờ chạy.
+
+Xem [hướng dẫn IPsec](../technical-guides/06-ipsec-strongswan-guide.md) để chọn mode tại hai gateway và [script cấu hình lại Windows](../../scripts/setup-c2s-windows.ps1) để cài profile C2S.
+
+## Đổi subnet LAN ngày 20/11/2026
+
+| Máy | IP LAN mới | IP SSH quản trị qua VMnet8 |
+| --- | --- | --- |
+| HQ-GW | `10.74.10.1/24` | `client@192.168.27.141` |
+| HQ-Server | `10.74.10.50/24` | `root@192.168.27.138` |
+| Branch-GW | `10.74.20.1/24` | `branchgateway@192.168.27.139` |
+| Branch-PC | `10.74.20.50/24` | `branchpc@192.168.27.140` |
+
+- Qua SSH, kiểm tra IP LAN và route mới trên bốn Linux, cùng các chain firewall mới trên hai gateway. S2S dùng `tun1` tại HQ và `tun0` tại Branch. Hai host LAN ping được nhau theo cả hai chiều.
+- Branch-PC nhận HTTP 200 từ `http://10.74.10.50`. API `/api/identity` trả IP nguồn `10.74.20.50`. SHA-256 của file tải trùng file gốc trên HQ-Server.
+- Phía HQ-GW ghi nhận `client1` kết nối từ WAN `172.16.1.100`, được cấp `10.8.0.2`, được gửi route `10.74.10.0/24` và thương lượng `AES-256-GCM`. Chưa kiểm tra HTTP từ trong VM Windows ở lần chuyển địa chỉ này.
+- `netplan apply` làm gián đoạn SSH trên ba VM dùng `systemd-networkd`. Khởi động mềm ba VM bằng VMware đã khôi phục các NIC và lease NAT. Bản sao trước thay đổi nằm ở `/root/vpn-lab-backup/lan-10-74-20261120-v2` trên từng Linux.
+
+## Lần triển khai ban đầu trên dải LAN cũ
+
+Địa chỉ bên dưới cùng log và PCAP đi kèm phản ánh lần chạy trước khi chuyển subnet. Xem [quy trình chuyển địa chỉ](README.md#2-chuyển-địa-chỉ-cho-lab-đã-dựng) để áp dụng cho bản lab còn dùng dải cũ.
 
 **Bốn Linux đã được cấu hình và kiểm tra thực tế qua SSH.** OpenVPN Site-to-Site và Portal HQ đang hoạt động; server Client-to-Site đã được thử bằng client Linux tạm. Windows Remote-PC do người dùng tự cấu hình, chưa được đánh dấu đạt nghiệm thu Windows.
 

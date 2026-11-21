@@ -170,7 +170,7 @@ class RepositoryChecks(unittest.TestCase):
             self.assertNotEqual(shell(command, path.as_posix()).returncode, 0)
 
     def test_route_check_rejects_wan_even_if_destination_matches(self):
-        command = 'source scripts/common/verification.sh; ip() { echo "192.168.20.50 via 172.16.1.20 dev wan0"; }; route_uses 192.168.20.50 tun1'
+        command = 'source scripts/common/verification.sh; ip() { echo "10.74.20.50 via 172.16.1.20 dev wan0"; }; route_uses 10.74.20.50 tun1'
         self.assertNotEqual(shell(command).returncode, 0)
         self.assertEqual(shell(command.replace('dev wan0', 'dev tun1')).returncode, 0)
 
@@ -284,8 +284,8 @@ tcpdump() {
                 with self.subTest(role=role, mode=mode):
                     chains = firewall(role, mode)
                     hq = role == "hq-gw"
-                    local = "192.168.10.50" if hq else "192.168.20.50"
-                    remote = "192.168.20.50" if hq else "192.168.10.50"
+                    local = "10.74.10.50" if hq else "10.74.20.50"
+                    remote = "10.74.20.50" if hq else "10.74.10.50"
                     local_wan = "172.16.1.10" if hq else "172.16.1.20"
                     peer_wan = "172.16.1.20" if hq else "172.16.1.10"
                     tun = "tun1" if hq else "tun0"

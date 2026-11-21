@@ -25,7 +25,7 @@ flowchart LR
     W["Windows Client\nWAN 172.16.1.100\nVPN 10.8.0.y"] -->|"OpenVPN UDP 1194"| S
 ```
 
-Web demo: **`http://10.8.0.1`**. Nginx chỉ bind vào địa chỉ tunnel và loopback, không nghe trên WAN. Lưu lượng kết thúc ngay trên server nên bài này không cần router Linux riêng, NAT MASQUERADE, IP forwarding hoặc mạng `192.168.10.0/24`/`192.168.20.0/24`.
+Web demo: **`http://10.8.0.1`**. Nginx chỉ bind vào địa chỉ tunnel và loopback, không nghe trên WAN. Lưu lượng kết thúc ngay trên server nên bài này không cần router Linux riêng, NAT MASQUERADE, IP forwarding hoặc mạng `10.74.10.0/24`/`10.74.20.0/24`.
 
 ## 2. Chuẩn bị VMware và IP
 

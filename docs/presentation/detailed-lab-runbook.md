@@ -14,7 +14,7 @@ Các lệnh Bash chạy trên đúng máy Armbian được ghi ở mỗi bước
 | --- | --- | --- | --- | --- |
 | **HQ-GW** | Armbian Minimal/CLI, không GUI | Đầu nhận VPN nhân viên và VPN chi nhánh; định tuyến vào HQ | OpenVPN, Easy-RSA, iptables, iptables-persistent, netfilter-persistent, tcpdump, SSH, chrony, công cụ mạng | `openvpn-server@server-c2s`, `openvpn-server@server-s2s`; forwarding IPv4 |
 | **Branch-GW** | Armbian Minimal/CLI, không GUI | Chủ động kết nối S2S tới HQ; chuyển tiếp lưu lượng Branch-PC | OpenVPN, Easy-RSA theo bộ gói gateway của repo, iptables, iptables-persistent, netfilter-persistent, tcpdump, SSH, chrony, công cụ mạng | `openvpn-client@client-s2s`; forwarding IPv4 |
-| **HQ-Server** | Armbian Minimal/CLI, không GUI | Máy web nội bộ để hai phía truy cập | Nginx, curl, chrony, công cụ mạng | `nginx`, Portal tại `http://192.168.10.50` |
+| **HQ-Server** | Armbian Minimal/CLI, không GUI | Máy web nội bộ để hai phía truy cập | Nginx, curl, chrony, công cụ mạng | `nginx`, Portal tại `http://10.74.10.50` |
 | **Branch-PC** | Armbian Desktop **Xfce**, có GUI | Máy người dùng chi nhánh, mở web qua hai gateway | Trình duyệt Firefox/Chromium, curl, traceroute, công cụ mạng; desktop có sẵn trong image | Desktop, terminal, browser; lưu lượng VPN do Branch-GW xử lý |
 | **Remote-PC** | Windows x64 | Máy nhân viên ở WAN giả lập, tự bật/tắt C2S | OpenVPN Community kèm **OpenVPN GUI và driver**, trình duyệt; Wireshark tùy chọn | OpenVPN GUI với profile `client1.ovpn` |
 
@@ -37,10 +37,10 @@ Tạo ba **LAN Segment** trong VMware, rồi gắn NIC theo bảng. LAN Segment 
 
 | Máy | NIC lab thứ nhất | NIC lab thứ hai | NIC NAT tạm |
 | --- | --- | --- | --- |
-| HQ-GW | WAN-Net: `172.16.1.10/24` | HQ-LAN-Net: `192.168.10.1/24` | Có, để tải gói |
-| Branch-GW | WAN-Net: `172.16.1.20/24` | Branch-LAN-Net: `192.168.20.1/24` | Có, để tải gói |
-| HQ-Server | HQ-LAN-Net: `192.168.10.50/24` | — | Có, để tải gói |
-| Branch-PC | Branch-LAN-Net: `192.168.20.50/24` | — | Có, để tải gói/browser |
+| HQ-GW | WAN-Net: `172.16.1.10/24` | HQ-LAN-Net: `10.74.10.1/24` | Có, để tải gói |
+| Branch-GW | WAN-Net: `172.16.1.20/24` | Branch-LAN-Net: `10.74.20.1/24` | Có, để tải gói |
+| HQ-Server | HQ-LAN-Net: `10.74.10.50/24` | — | Có, để tải gói |
+| Branch-PC | Branch-LAN-Net: `10.74.20.50/24` | — | Có, để tải gói/browser |
 | Remote-PC | WAN-Net: `172.16.1.100/24` | — | Có nếu cần tải OpenVPN |
 
 Hai subnet tunnel do OpenVPN tạo, **không tạo LAN Segment cho chúng**:
@@ -185,7 +185,7 @@ network:
     ens37:
       dhcp4: false
       dhcp6: false
-      addresses: [192.168.10.1/24]
+      addresses: [10.74.10.1/24]
     ens39:
       dhcp4: true
       dhcp6: false
@@ -207,7 +207,7 @@ network:
     ens37:
       dhcp4: false
       dhcp6: false
-      addresses: [192.168.20.1/24]
+      addresses: [10.74.20.1/24]
     ens39:
       dhcp4: true
       dhcp6: false
@@ -225,15 +225,15 @@ network:
     ens33:
       dhcp4: false
       dhcp6: false
-      addresses: [192.168.10.50/24]
+      addresses: [10.74.10.50/24]
       routes:
         - to: default
-          via: 192.168.10.1
+          via: 10.74.10.1
           metric: 200
-        - to: 192.168.20.0/24
-          via: 192.168.10.1
+        - to: 10.74.20.0/24
+          via: 10.74.10.1
         - to: 10.9.0.0/24
-          via: 192.168.10.1
+          via: 10.74.10.1
     ens37:
       dhcp4: true
       dhcp6: false
@@ -251,15 +251,15 @@ network:
     ens33:
       dhcp4: false
       dhcp6: false
-      addresses: [192.168.20.50/24]
+      addresses: [10.74.20.50/24]
       routes:
         - to: default
-          via: 192.168.20.1
+          via: 10.74.20.1
           metric: 200
-        - to: 192.168.10.0/24
-          via: 192.168.20.1
+        - to: 10.74.10.0/24
+          via: 10.74.20.1
         - to: 10.9.0.0/24
-          via: 192.168.20.1
+          via: 10.74.20.1
     ens37:
       dhcp4: true
       dhcp6: false
@@ -295,7 +295,7 @@ EOF
 sudo chmod 644 /etc/vpn-lab/interfaces.conf
 ```
 
-Hai dòng này chỉ khai báo NIC cho script, không thay thế Netplan. Trên HQ-GW thử `ping -c 3 172.16.1.20`; trên HQ-Server thử `ping -c 3 192.168.10.1`; trên Branch-PC thử `ping -c 3 192.168.20.1`. Chưa có VPN thì chưa yêu cầu ping được LAN bên kia.
+Hai dòng này chỉ khai báo NIC cho script, không thay thế Netplan. Trên HQ-GW thử `ping -c 3 172.16.1.20`; trên HQ-Server thử `ping -c 3 10.74.10.1`; trên Branch-PC thử `ping -c 3 10.74.20.1`. Chưa có VPN thì chưa yêu cầu ping được LAN bên kia.
 
 ### 4.7. Windows Remote-PC
 
@@ -323,7 +323,7 @@ cd ~/vpn-lab
 sudo bash scripts/deploy-all.sh hq-server
 sudo systemctl is-active nginx
 sudo bash scripts/verify-portal.sh
-curl --noproxy '*' --max-time 5 http://192.168.10.50/api/identity
+curl --noproxy '*' --max-time 5 http://10.74.10.50/api/identity
 ```
 
 Script chép Portal của repo vào `/var/www/vpn-lab-portal`, cấu hình Nginx chỉ nghe HQ LAN và loopback, rồi khởi động dịch vụ. Dùng VM lab riêng và kiểm tra các virtual host cũ không còn nghe wildcard trên NIC NAT. Kỳ vọng Nginx `active`, HTTP thành công, API trả JSON. Đây mới là kiểm tra web tại HQ; chưa chứng minh VPN hoạt động.
@@ -373,7 +373,7 @@ sudo bash scripts/deploy-all.sh branch-gw
 sudo systemctl is-active openvpn-client@client-s2s
 sudo journalctl -u openvpn-client@client-s2s -n 40 --no-pager
 ip -br address show tun0
-ip route get 192.168.10.50
+ip route get 10.74.10.50
 sudo bash scripts/verify-s2s.sh branch-gw
 ```
 
@@ -387,7 +387,7 @@ sudo bash scripts/verify-s2s.sh hq-gw
 sudo journalctl -u openvpn-server@server-s2s -n 40 --no-pager
 ```
 
-HQ phải thấy `branch-gw` xác thực thành công; CCD gán IP tunnel `10.9.0.2` và `iroute` cho `192.168.20.0/24`.
+HQ phải thấy `branch-gw` xác thực thành công; CCD gán IP tunnel `10.9.0.2` và `iroute` cho `10.74.20.0/24`.
 
 ### Bước 5 — Branch-PC GUI: kiểm tra từ máy người dùng
 
@@ -396,19 +396,19 @@ Trên **Branch-PC**:
 ```bash
 cd ~/vpn-lab
 sudo bash scripts/deploy-all.sh branch-pc
-ip route get 192.168.10.50
-ping -c 3 192.168.10.50
-curl --noproxy '*' --max-time 5 http://192.168.10.50/api/identity
-xdg-open http://192.168.10.50
+ip route get 10.74.10.50
+ping -c 3 10.74.10.50
+curl --noproxy '*' --max-time 5 http://10.74.10.50/api/identity
+xdg-open http://10.74.10.50
 ```
 
-Kỳ vọng route của Branch-PC dùng `via 192.168.20.1`, browser hiển thị Portal. Nginx dự kiến quan sát nguồn `192.168.20.50` vì S2S hiện tại giữ nguyên IP LAN. Branch-PC dùng gateway để đi VPN, không cần import `.ovpn`.
+Kỳ vọng route của Branch-PC dùng `via 10.74.20.1`, browser hiển thị Portal. Nginx dự kiến quan sát nguồn `10.74.20.50` vì S2S hiện tại giữ nguyên IP LAN. Branch-PC dùng gateway để đi VPN, không cần import `.ovpn`.
 
 Trên **HQ-Server**, xác nhận thông hai chiều:
 
 ```bash
-ip route get 192.168.20.50
-ping -c 3 192.168.20.50
+ip route get 10.74.20.50
+ping -c 3 10.74.20.50
 ```
 
 ### Bước 6 — Windows: nhận profile và kết nối Client-to-Site
@@ -425,13 +425,13 @@ Trên **Windows Remote-PC**:
 ipconfig
 route print -4
 ping -n 3 10.8.0.1
-ping -n 3 192.168.10.50
-Test-NetConnection 192.168.10.50 -Port 80
-Invoke-WebRequest -UseBasicParsing -Method Head -Uri http://192.168.10.50 -TimeoutSec 5
-Start-Process http://192.168.10.50
+ping -n 3 10.74.10.50
+Test-NetConnection 10.74.10.50 -Port 80
+Invoke-WebRequest -UseBasicParsing -Method Head -Uri http://10.74.10.50 -TimeoutSec 5
+Start-Process http://10.74.10.50
 ```
 
-Kỳ vọng Windows có IP tunnel `10.8.0.x` và route `192.168.10.0/24`; không yêu cầu địa chỉ phải là `10.8.0.2`. Web trả HTTP 200. C2S hiện dùng NAT tại HQ-GW nên Portal dự kiến thấy nguồn **`192.168.10.1`**, không phải IP tunnel Windows. Profile hiện chỉ đẩy route vào HQ-LAN, không dùng truy cập Branch-LAN làm tiêu chí C2S.
+Kỳ vọng Windows có IP tunnel `10.8.0.x` và route `10.74.10.0/24`; không yêu cầu địa chỉ phải là `10.8.0.2`. Web trả HTTP 200. C2S hiện dùng NAT tại HQ-GW nên Portal dự kiến thấy nguồn **`10.74.10.1`**, không phải IP tunnel Windows. Profile hiện chỉ đẩy route vào HQ-LAN, không dùng truy cập Branch-LAN làm tiêu chí C2S.
 
 Trên **HQ-GW**:
 
@@ -450,7 +450,7 @@ sudo journalctl -u openvpn-server@server-c2s -n 40 --no-pager
 5. Windows **Disconnect**, thử HTTP bằng lệnh dưới. Dự kiến timeout/lỗi trong mô hình cô lập. Nếu vẫn thành công, kiểm tra adapter, proxy và route, không chuyển sang phần trình diễn với kết quả sai.
 
 ```powershell
-Invoke-WebRequest -UseBasicParsing -Method Head -Uri http://192.168.10.50 -TimeoutSec 3
+Invoke-WebRequest -UseBasicParsing -Method Head -Uri http://10.74.10.50 -TimeoutSec 3
 ```
 
 Ghi kết quả thực vào [checklist nghiệm thu](../../tests/openvpn-demo.md); chưa chạy VM thì không ghi PASS. Lưu snapshot sau khi hệ thống đã được kiểm tra. Firewall mới dùng chain FORWARD kết thúc bằng DROP và chặn WAN vào địa chỉ LAN/tunnel; cần chạy thêm phép thử route tự thêm và ngắt S2S trong checklist để xác minh trên VM.
@@ -477,7 +477,7 @@ Trên **Windows**, xác nhận OpenVPN GUI đang Disconnect, rồi chạy:
 
 ```powershell
 ping -n 2 172.16.1.10
-Invoke-WebRequest -UseBasicParsing -Method Head -Uri http://192.168.10.50 -TimeoutSec 3
+Invoke-WebRequest -UseBasicParsing -Method Head -Uri http://10.74.10.50 -TimeoutSec 3
 ```
 
 **Kỳ vọng:** ping tới WAN của HQ được, HTTP tới LAN HQ lỗi/timeout. **Nói:** “Máy đã liên lạc được địa chỉ WAN của gateway nhưng chưa có đường VPN vào web nội bộ.” Dùng lệnh HTTP mới để tránh nhầm với trang browser đã cache.
@@ -489,8 +489,8 @@ Trên **Windows**, chọn `client1` → Connect, chờ log thành công. Chạy:
 ```powershell
 ipconfig
 route print -4
-Test-NetConnection 192.168.10.50 -Port 80
-Start-Process http://192.168.10.50
+Test-NetConnection 10.74.10.50 -Port 80
+Start-Process http://10.74.10.50
 ```
 
 Chỉ IP `10.8.0.x`, route HQ-LAN và Portal đang hoạt động. Trên **HQ-GW** hiển thị client từ xa trong log/status:
@@ -507,13 +507,13 @@ Status file có thể cập nhật trễ; nếu chưa thấy client, chờ chu k
 Chuyển sang **Branch-PC GUI**:
 
 ```bash
-ip route get 192.168.10.50
-ping -c 3 192.168.10.50
-curl --noproxy '*' --max-time 5 http://192.168.10.50/api/identity
-xdg-open http://192.168.10.50
+ip route get 10.74.10.50
+ping -c 3 10.74.10.50
+curl --noproxy '*' --max-time 5 http://10.74.10.50/api/identity
+xdg-open http://10.74.10.50
 ```
 
-Chỉ next hop `192.168.20.1` và địa chỉ nguồn quan sát `192.168.20.50` trong API/Portal. Trên **HQ-Server**, ping `192.168.20.50` để thể hiện chiều ngược. Nếu cần, mở log Branch-GW có tunnel `10.9.0.2`.
+Chỉ next hop `10.74.20.1` và địa chỉ nguồn quan sát `10.74.20.50` trong API/Portal. Trên **HQ-Server**, ping `10.74.20.50` để thể hiện chiều ngược. Nếu cần, mở log Branch-GW có tunnel `10.9.0.2`.
 
 **Nói:** “Máy chi nhánh gửi gói cho Branch-GW. Hai gateway vận chuyển lưu lượng LAN qua tunnel S2S; máy người dùng chỉ dùng gateway bình thường.”
 
@@ -536,7 +536,7 @@ sudo bash scripts/capture-traffic.sh -i "$LAN_IF" -m lan-http -c 20 -o demo-http
 Đợi cả hai báo `listening`, rồi trên **Branch-PC** phát sinh lưu lượng:
 
 ```bash
-curl --noproxy '*' --connect-timeout 3 --max-time 20 -o /dev/null http://192.168.10.50/files/benchmark-payload-1mb.dat
+curl --noproxy '*' --connect-timeout 3 --max-time 20 -o /dev/null http://10.74.10.50/files/benchmark-payload-1mb.dat
 ```
 
 Nếu chưa đủ 20 gói, tải lại hoặc nhấn Ctrl+C sau khi đã thu được lưu lượng. PCAP lưu ở `tests/captures/samples/` trong repo HQ-GW. Đọc ngay trên HQ:

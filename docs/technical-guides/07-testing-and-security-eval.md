@@ -1,6 +1,6 @@
 # Kế hoạch đo kiểm và đánh giá VPN
 
-**Đã có kết quả triển khai Linux ngày 20/11/2026 tại [báo cáo lab trực tiếp](../deployment/live-lab-status.md). Windows vẫn chờ người dùng cấu hình.** Các số RTT/throughput và nhãn PASS trong bản tài liệu trước không có log/PCAP đối chứng trong repo, đã được bỏ khỏi bảng kết quả. Xem [báo cáo rà soát](../topic14-audit.md) và [checklist nghiệm thu](../../tests/openvpn-demo.md).
+**Đã có kết quả triển khai OpenVPN và IPsec trên Linux.** HQ-GW đã xác nhận phiên C2S, còn HTTP phía Windows do người dùng tự kiểm tra. Xem [báo cáo lab trực tiếp](../deployment/live-lab-status.md) và [checklist nghiệm thu](../../tests/openvpn-demo.md).
 
 ## Phạm vi và phương pháp
 
@@ -25,7 +25,7 @@ Phương án chính là OpenVPN C2S + S2S trên 5 máy. Phải kiểm tra remote
 | Khôi phục sau reboot | Hai gateway và HQ-Server | Đạt trên bốn Linux | [Log và PCAP](../deployment/live-lab-status.md) |
 | RTT/loss, 100 ping | Branch-PC → HQ-Server | Chưa đo | — |
 | Tải payload 1 MiB | Client → HQ-Server | Đạt chức năng: đúng byte/hash; chưa đo hiệu năng lặp lại | [Log và PCAP](../deployment/live-lab-status.md) |
-| IPsec S2S nếu thực hiện | Hai LAN + XFRM/ESP | Chưa chạy | — |
+| IPsec S2S | Hai LAN + XFRM/ESP | Đạt kiểm tra IKEv2, XFRM, ping, HTTP, hash và chặn bản rõ khi tunnel ngắt | [Kết quả ngày 21/11/2026](../deployment/live-lab-status.md#triển-khai-ipsec-ngày-21112026) |
 
 ## Đo hiệu năng có thể lặp lại
 
@@ -33,10 +33,10 @@ Ghi CPU/RAM VM, phiên bản kernel/OpenVPN/strongSwan, DCO bật/tắt và cấ
 
 ```bash
 # Branch-PC, sau khi xác nhận S2S hoạt động:
-ping -c 100 -W 2 192.168.10.50
+ping -c 100 -W 2 10.74.10.50
 curl --noproxy '*' --fail --connect-timeout 3 --max-time 30 -o /tmp/vpn-benchmark.dat \
   -w 'bytes=%{size_download} seconds=%{time_total} bytes_per_second=%{speed_download}\n' \
-  http://192.168.10.50/files/benchmark-payload-1mb.dat
+  http://10.74.10.50/files/benchmark-payload-1mb.dat
 wc -c /tmp/vpn-benchmark.dat
 sha256sum /tmp/vpn-benchmark.dat
 # HQ-Server: đối chiếu hash tệp tại /var/www/vpn-lab-portal/files/.

@@ -12,14 +12,14 @@
 
 Mô hình **Site-to-Site VPN** cho phép liên kết hai hoặc nhiều mạng cục bộ (LAN) tại các vị trí địa lý khác nhau (Trụ sở chính HQ và Văn phòng Chi nhánh Branch Office) thành các subnet có thể định tuyến qua VPN thông qua cặp VPN Gateway:
 - **Đặc điểm nổi bật:** Toàn bộ quá trình mã hóa, giải mã và định tuyến được thực hiện tập trung tại 2 Gateway (`VM-HQ-GW` và `VM-Branch-GW`).
-- **Trong suốt với người dùng cuối (Transparency):** Các máy trạm tại hai bên (`192.168.10.50` và `192.168.20.50`) **hoàn toàn không cần cài đặt bất kỳ phần mềm VPN nào**; chúng giao tiếp với nhau như thể đang nằm trong cùng một mạng diện rộng riêng (WAN/MPLS nội bộ).
+- **Trong suốt với người dùng cuối (Transparency):** Các máy trạm tại hai bên (`10.74.10.50` và `10.74.20.50`) **hoàn toàn không cần cài đặt bất kỳ phần mềm VPN nào**; chúng giao tiếp với nhau như thể đang nằm trong cùng một mạng diện rộng riêng (WAN/MPLS nội bộ).
 
 ```mermaid
 flowchart TD
-    subgraph Flow_HQ ["Trụ sở chính (HQ Site - 192.168.10.0/24)"]
-        H_PC["Máy chủ / Máy trạm HQ\n192.168.10.50"]
-        H_NIC_LAN["eth1: 192.168.10.1"]
-        H_TUN["tun1 (S2S Endpoint): 10.9.0.1\n+ CCD iroute: 192.168.20.0/24"]
+    subgraph Flow_HQ ["Trụ sở chính (HQ Site - 10.74.10.0/24)"]
+        H_PC["Máy chủ / Máy trạm HQ\n10.74.10.50"]
+        H_NIC_LAN["eth1: 10.74.10.1"]
+        H_TUN["tun1 (S2S Endpoint): 10.9.0.1\n+ CCD iroute: 10.74.20.0/24"]
         H_NIC_WAN["eth0: 172.16.1.10"]
     end
 
@@ -27,14 +27,14 @@ flowchart TD
         INTERNET["Đường truyền Internet\n(Gói tin được bọc UDP 1195 + Mã hóa AES-256-GCM)"]
     end
 
-    subgraph Flow_BR ["Văn phòng Chi nhánh (Branch Site - 192.168.20.0/24)"]
+    subgraph Flow_BR ["Văn phòng Chi nhánh (Branch Site - 10.74.20.0/24)"]
         B_NIC_WAN["eth0: 172.16.1.20"]
-        B_TUN["tun0 (S2S Endpoint): 10.9.0.2\nRoute: 192.168.10.0/24 via 10.9.0.1"]
-        B_NIC_LAN["eth1: 192.168.20.1"]
-        B_PC["Máy trạm Chi nhánh\n192.168.20.50"]
+        B_TUN["tun0 (S2S Endpoint): 10.9.0.2\nRoute: 10.74.10.0/24 via 10.9.0.1"]
+        B_NIC_LAN["eth1: 10.74.20.1"]
+        B_PC["Máy trạm Chi nhánh\n10.74.20.50"]
     end
 
-    H_PC -->|"1. Gửi gói tin IP đích 192.168.20.50"| H_NIC_LAN
+    H_PC -->|"1. Gửi gói tin IP đích 10.74.20.50"| H_NIC_LAN
     H_NIC_LAN -->|"2. Kernel IP Forward"| H_TUN
     H_TUN -->|"3. Mã hóa & Đóng gói OpenVPN"| H_NIC_WAN
     H_NIC_WAN -->|"4. Gói tin UDP Datagram"| INTERNET
@@ -53,8 +53,8 @@ flowchart TD
 
 | Khái niệm | Nơi cấu hình | Phạm vi tác động | Mục đích kỹ thuật |
 |---|---|---|---|
-| **`route 192.168.20.0 ...`** | `server-s2s.conf` | **Kernel Hệ điều hành Linux (OS)** | Dạy cho bảng định tuyến của OS trên HQ Gateway biết rằng: Mọi gói tin có đích đến `192.168.20.0/24` phải chuyển vào giao diện ảo `tun1`. |
-| **`iroute 192.168.20.0 ...`** | `/etc/openvpn/ccd/branch-gw` | **Nội bộ tiến trình OpenVPN Daemon** | Dạy cho tiến trình OpenVPN biết rằng: Trong số rất nhiều client đang kết nối, chính client có Common Name `branch-gw` là thiết bị sở hữu mạng `192.168.20.0/24`. |
+| **`route 10.74.20.0 ...`** | `server-s2s.conf` | **Kernel Hệ điều hành Linux (OS)** | Dạy cho bảng định tuyến của OS trên HQ Gateway biết rằng: Mọi gói tin có đích đến `10.74.20.0/24` phải chuyển vào giao diện ảo `tun1`. |
+| **`iroute 10.74.20.0 ...`** | `/etc/openvpn/ccd/branch-gw` | **Nội bộ tiến trình OpenVPN Daemon** | Dạy cho tiến trình OpenVPN biết rằng: Trong số rất nhiều client đang kết nối, chính client có Common Name `branch-gw` là thiết bị sở hữu mạng `10.74.20.0/24`. |
 
 > [!CRITICAL]
 > Nếu thiếu lệnh `iroute` trong file CCD, nhân Linux sẽ đẩy gói tin vào `tun1`, nhưng tiến trình OpenVPN Server sẽ không biết gửi gói tin này cho client nào và sẽ hủy gói tin (Drop packet) với thông báo log: `MULTI: no route to host`.
@@ -67,15 +67,15 @@ flowchart TD
 - Chạy trên cổng riêng: `port 1195`, giao thức `udp`, interface `dev tun1`.
 - Dải mạng đường hầm S2S: `server 10.9.0.0 255.255.255.0`.
 - Thư mục cấu hình client: `client-config-dir /etc/openvpn/ccd`.
-- Đẩy tuyến đường về HQ cho Branch: `push "route 192.168.10.0 255.255.255.0"`.
-- Định tuyến OS: `route 192.168.20.0 255.255.255.0`.
-- Tệp CCD `/etc/openvpn/ccd/branch-gw`: chứa dòng `iroute 192.168.20.0 255.255.255.0`.
+- Đẩy tuyến đường về HQ cho Branch: `push "route 10.74.10.0 255.255.255.0"`.
+- Định tuyến OS: `route 10.74.20.0 255.255.255.0`.
+- Tệp CCD `/etc/openvpn/ccd/branch-gw`: chứa dòng `iroute 10.74.20.0 255.255.255.0`.
 
 ### 3.2. Cấu hình Branch Gateway Client (`s2s-branch.conf` -> `/etc/openvpn/client/client-s2s.conf`)
 - Chế độ máy khách: `client`, `dev tun0`, `proto udp`.
 - Địa chỉ máy chủ HQ: `remote 172.16.1.10 1195`.
 - Chứng chỉ xác thực: `ca.crt`, `branch-gw.crt`, `branch-gw.key`, `ta.key`.
-- Tự động nhận tuyến đường `192.168.10.0/24 via 10.9.0.1` do HQ Server đẩy sang.
+- Tự động nhận tuyến đường `10.74.10.0/24 via 10.9.0.1` do HQ Server đẩy sang.
 
 ---
 
@@ -107,13 +107,13 @@ sudo bash scripts/deploy-s2s-branch.sh
 ```
 
 ### Bước 5.3: Chạy script kiểm tra nghiệm thu
-Trên Branch PC (`192.168.20.50`):
+Trên Branch PC (`10.74.20.50`):
 ```bash
 bash scripts/verify-s2s.sh branch-pc
 ```
 
 ### Các tiêu chí nghiệm thu đạt yêu cầu (Pass Criteria):
 - [ ] **TC-05 (Tunnel Status):** Interface `tun1` (HQ: `10.9.0.1`) và `tun0` (Branch: `10.9.0.2`) đều ở trạng thái `UP`.
-- [ ] **TC-06 (LAN-to-LAN Connectivity):** Từ máy `192.168.20.50` ping `192.168.10.50` đạt tỷ lệ phản hồi 100% không mất gói (0% loss), ghi RTT thực tế.
-- [ ] **TC-07 (Traceroute Hop Inspection):** Lệnh `traceroute -n 192.168.10.50` hiển thị rõ ràng gói tin đi qua chặng Gateway nội bộ `192.168.20.1` -> chặng đường hầm `10.9.0.1` -> máy chủ `192.168.10.50` (hoàn toàn không để lộ địa chỉ mạng công cộng `172.16.1.x`).
-- [ ] **HTTP Access:** Lệnh `curl -I http://192.168.10.50` từ máy trạm chi nhánh phản hồi `HTTP/1.1 200 OK`.
+- [ ] **TC-06 (LAN-to-LAN Connectivity):** Từ máy `10.74.20.50` ping `10.74.10.50` đạt tỷ lệ phản hồi 100% không mất gói (0% loss), ghi RTT thực tế.
+- [ ] **TC-07 (Traceroute Hop Inspection):** Lệnh `traceroute -n 10.74.10.50` hiển thị rõ ràng gói tin đi qua chặng Gateway nội bộ `10.74.20.1` -> chặng đường hầm `10.9.0.1` -> máy chủ `10.74.10.50` (hoàn toàn không để lộ địa chỉ mạng công cộng `172.16.1.x`).
+- [ ] **HTTP Access:** Lệnh `curl -I http://10.74.10.50` từ máy trạm chi nhánh phản hồi `HTTP/1.1 200 OK`.

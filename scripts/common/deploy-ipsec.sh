@@ -10,9 +10,11 @@ source "${SCRIPT_DIR}/lab-network.sh"
 check_gateway_interfaces
 PSK_FILE="${PSK_FILE:-/etc/vpn-lab/ipsec.secrets}"
 bash "${SCRIPT_DIR}/check-ipsec-secrets.sh" "${PSK_FILE}"
-if ! command -v ipsec >/dev/null 2>&1; then
+# Ubuntu's strongswan metapackage can install charon-systemd/swanctl, which
+# does not read the ipsec.conf and ipsec.secrets used by this lab.
+if ! systemctl cat strongswan-starter.service >/dev/null 2>&1; then
     apt-get update
-    DEBIAN_FRONTEND=noninteractive apt-get install -y strongswan libstrongswan-extra-plugins iptables-persistent netfilter-persistent
+    DEBIAN_FRONTEND=noninteractive apt-get install -y strongswan-starter strongswan-charon libstrongswan-extra-plugins iptables-persistent netfilter-persistent
 fi
 install -m 644 "${REPO_ROOT}/ipsec/strongswan/gateway-${SIDE}/ipsec.conf" /etc/ipsec.conf
 # Avoid copying a file onto itself if PSK_FILE already points to /etc/ipsec.secrets.

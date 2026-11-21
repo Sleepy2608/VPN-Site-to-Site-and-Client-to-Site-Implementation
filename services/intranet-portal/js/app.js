@@ -33,7 +33,7 @@ function renderIdentityStatus(ip) {
         title.textContent = '[UNKNOWN] Chưa đọc được IP nguồn';
         description.textContent = 'API định danh chưa phản hồi hợp lệ. Kiểm tra Nginx và kết nối tới máy chủ.';
         tunnelType.textContent = 'Chưa xác định';
-    } else if (ip === '192.168.10.1') {
+    } else if (ip === '10.74.10.1') {
         title.textContent = '[GATEWAY] Yêu cầu đến từ HQ Gateway';
         description.textContent = 'C2S trong lab dùng NAT nên Nginx có thể thấy IP gateway này. Xem IP tunnel bằng ipconfig trên Windows Remote-PC và phiên client trong status log.';
         tunnelType.textContent = 'HQ Gateway / C2S qua NAT';
@@ -41,12 +41,12 @@ function renderIdentityStatus(ip) {
         title.textContent = '[C2S] IP nguồn thuộc dải OpenVPN Client-to-Site';
         description.textContent = `Nginx quan sát IP ${ip}. Đối chiếu phiên kết nối và cipher trên gateway.`;
         tunnelType.textContent = 'Nguồn thuộc dải C2S';
-    } else if (ip.startsWith('192.168.20.')) {
+    } else if (ip.startsWith('10.74.20.')) {
         card.className = 'identity-banner-card branch';
         title.textContent = '[BRANCH] IP nguồn thuộc LAN chi nhánh';
         description.textContent = `Nginx quan sát IP ${ip}. Mô hình lab dùng OpenVPN S2S; kiểm tra tunnel tại hai gateway.`;
         tunnelType.textContent = 'LAN Branch / mô hình OpenVPN S2S';
-    } else if (ip.startsWith('192.168.10.')) {
+    } else if (ip.startsWith('10.74.10.')) {
         title.textContent = '[HQ] IP nguồn thuộc LAN trụ sở';
         description.textContent = `Nginx quan sát IP ${ip}. HTTP trong LAN sau gateway là bản rõ.`;
         tunnelType.textContent = 'LAN HQ';

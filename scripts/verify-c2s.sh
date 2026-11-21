@@ -17,13 +17,13 @@ if [[ "${MODE}" == server ]]; then
     check 'C2S NAT toward HQ LAN installed' iptables -t nat -C POSTROUTING -s 10.8.0.0/24 -o "${LAN_IF}" -j MASQUERADE
     check 'client1 present in fresh status log (connect Windows first, wait 5s)' connected_client /var/log/openvpn/openvpn-c2s-status.log client1
 else
-    route="$(ip -4 route get 192.168.10.50)" || route=''
+    route="$(ip -4 route get 10.74.10.50)" || route=''
     echo "${route}"
     # Linux C2S diagnostic only. Windows uses verify-c2s-windows.ps1.
     device="$(awk '{for(i=1;i<NF;i++) if($i=="dev") print $(i+1)}' <<< "${route}")"
     if [[ "${device}" == tun* ]]; then record_pass 'HQ route uses TUN'; else record_fail 'HQ route must use TUN'; fi
     check 'Tunnel gateway reachable' ping -c 2 -W 2 10.8.0.1
-    check 'HQ server reachable' ping -c 2 -W 2 192.168.10.50
-    check 'HQ portal HTTP 200' http_ok http://192.168.10.50/
+    check 'HQ server reachable' ping -c 2 -W 2 10.74.10.50
+    check 'HQ portal HTTP 200' http_ok http://10.74.10.50/
 fi
 finish_checks

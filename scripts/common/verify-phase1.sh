@@ -30,9 +30,9 @@ if [[ "${TARGET_NODE}" == "auto" ]]; then
         TARGET_NODE="hq-gw"
     elif ip addr show 2>/dev/null | grep -q "172.16.1.20"; then
         TARGET_NODE="branch-gw"
-    elif ip addr show 2>/dev/null | grep -q "192.168.10.50"; then
+    elif ip addr show 2>/dev/null | grep -q "10.74.10.50"; then
         TARGET_NODE="hq-server"
-    elif ip addr show 2>/dev/null | grep -q "192.168.20.50"; then
+    elif ip addr show 2>/dev/null | grep -q "10.74.20.50"; then
         TARGET_NODE="branch-pc"
     else
         echo -e "${YELLOW}[WARN] Không tự nhận diện được địa chỉ IP. Vui lòng truyền tham số:${NC}"
@@ -94,7 +94,7 @@ case "${TARGET_NODE}" in
         echo "[INFO] Kiểm tra WAN từ Windows tới gateway; không bắt buộc Windows nhận ICMP vào."
 
         echo -e "\n=== [3] Kiểm tra kết nối LAN Trụ sở ==="
-        test_ping "192.168.10.50" "HQ Web Server LAN"
+        test_ping "10.74.10.50" "HQ Web Server LAN"
         ;;
 
     branch-gw)
@@ -107,7 +107,7 @@ case "${TARGET_NODE}" in
         echo "[INFO] Kiểm tra WAN từ Windows tới gateway; không bắt buộc Windows nhận ICMP vào."
 
         echo -e "\n=== [3] Kiểm tra kết nối LAN Chi nhánh ==="
-        test_ping "192.168.20.50" "Branch PC LAN"
+        test_ping "10.74.20.50" "Branch PC LAN"
         ;;
 
     hq-server)
@@ -115,12 +115,12 @@ case "${TARGET_NODE}" in
         check_chrony
 
         echo -e "\n=== [2] Kiểm tra kết nối Default Gateway ==="
-        test_ping "192.168.10.1" "HQ Gateway LAN Interface"
+        test_ping "10.74.10.1" "HQ Gateway LAN Interface"
         ;;
 
     branch-pc)
         echo "=== [1] Kiểm tra kết nối Default Gateway ==="
-        test_ping "192.168.20.1" "Branch Gateway LAN Interface"
+        test_ping "10.74.20.1" "Branch Gateway LAN Interface"
         ;;
 esac
 

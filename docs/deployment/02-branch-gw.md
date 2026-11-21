@@ -7,7 +7,7 @@ Branch-GW là gateway chi nhánh và OpenVPN client của đường S2S. Nó chu
 | Card trên Branch-GW đã đối chiếu | Nối VMware | Địa chỉ | Chức năng |
 | --- | --- | --- | --- |
 | ens33 | WAN-Net | 172.16.1.20/24 | Đi tới HQ-GW 172.16.1.10 UDP1195 |
-| ens37 | Branch-LAN-Net | 192.168.20.1/24 | Gateway cho Branch-PC |
+| ens37 | Branch-LAN-Net | 10.74.20.1/24 | Gateway cho Branch-PC |
 | ens38 | NAT | DHCP tạm, hiện nhận 192.168.27.139/24 | Cài gói |
 | tun0 | OpenVPN tự tạo | 10.9.0.2/24 | Đầu tunnel S2S của Branch |
 
@@ -38,7 +38,7 @@ network:
     ens37:
       dhcp4: false
       dhcp6: false
-      addresses: [192.168.20.1/24]
+      addresses: [10.74.20.1/24]
     ens38:
       dhcp4: true
       dhcp6: false
@@ -69,7 +69,7 @@ ip -br address
 ip route
 ```
 
-Khi `netplan try` hỏi xác nhận, nhấn Enter nếu không có lỗi và kết nối đúng. Kỳ vọng ens33 là `172.16.1.20/24`, ens37 là `192.168.20.1/24`, ens38 còn DHCP NAT và default route có `dev ens38`. Không đặt default gateway trên WAN-Net. Lúc này HQ-GW đã đặt WAN `.10`, nên có thể kiểm tra `ping -c 3 -W 2 172.16.1.10` trước khi cài VPN.
+Khi `netplan try` hỏi xác nhận, nhấn Enter nếu không có lỗi và kết nối đúng. Kỳ vọng ens33 là `172.16.1.20/24`, ens37 là `10.74.20.1/24`, ens38 còn DHCP NAT và default route có `dev ens38`. Không đặt default gateway trên WAN-Net. Lúc này HQ-GW đã đặt WAN `.10`, nên có thể kiểm tra `ping -c 3 -W 2 172.16.1.10` trước khi cài VPN.
 
 ## 3 Cài gói và chuẩn bị SSH
 
@@ -114,13 +114,13 @@ sudo bash scripts/deploy-all.sh branch-gw
 sudo systemctl is-active openvpn-client@client-s2s
 sudo journalctl -u openvpn-client@client-s2s -n 60 --no-pager
 ip -br address show tun0
-ip route get 192.168.10.50
+ip route get 10.74.10.50
 sysctl net.ipv4.ip_forward
 ```
 
 Lệnh triển khai còn cần Internet qua NAT. Cấu hình đang chạy là `/etc/openvpn/client/client-s2s.conf`: remote `172.16.1.10 1195`, xác thực server CN `hq-s2s-gw`, dùng cert `branch-gw` và nhận route HQ-LAN do HQ đẩy sang.
 
-Kỳ vọng có log `Initialization Sequence Completed`, tun0 là `10.9.0.2`, forwarding `1`, route tới `192.168.10.50` chứa `dev tun0`. Service `active` mà chưa có handshake/địa chỉ/route thì chưa đạt.
+Kỳ vọng có log `Initialization Sequence Completed`, tun0 là `10.9.0.2`, forwarding `1`, route tới `10.74.10.50` chứa `dev tun0`. Service `active` mà chưa có handshake/địa chỉ/route thì chưa đạt.
 
 ## 6 Kiểm tra đường đi và forwarding
 
@@ -129,12 +129,12 @@ HQ-Server phải đang chạy, Branch-PC đã đặt IP theo lượt A:
 ```bash
 cd ~/vpn-lab
 ping -c 3 -W 2 10.9.0.1
-ping -I 192.168.20.1 -c 3 -W 2 192.168.10.50
+ping -I 10.74.20.1 -c 3 -W 2 10.74.10.50
 sudo bash scripts/verify-s2s.sh branch-gw
 sudo iptables -nvL VPN_LAB_FORWARD
 ```
 
-Ping có nguồn `192.168.20.1` kiểm tra đường trả về cho mạng Branch. Tiếp theo dùng **Branch-PC** mở Portal; kết quả từ gateway riêng lẻ chưa thay thế phép thử host LAN.
+Ping có nguồn `10.74.20.1` kiểm tra đường trả về cho mạng Branch. Tiếp theo dùng **Branch-PC** mở Portal; kết quả từ gateway riêng lẻ chưa thay thế phép thử host LAN.
 
 ## 7 Khoanh vùng lỗi trên Branch-GW
 
@@ -153,4 +153,4 @@ sudo journalctl -u openvpn-client@client-s2s -n 80 --no-pager
 sudo iptables -S VPN_LAB_FORWARD
 ```
 
-Không thêm NAT S2S để che lỗi route. Phương án này giữ IP LAN nguồn để HQ nhận đúng `192.168.20.50` từ Branch-PC. Hoàn tất [Máy 4](04-branch-pc.md), rồi cùng cả hệ thống làm [nghiệm thu](06-acceptance.md).
+Không thêm NAT S2S để che lỗi route. Phương án này giữ IP LAN nguồn để HQ nhận đúng `10.74.20.50` từ Branch-PC. Hoàn tất [Máy 4](04-branch-pc.md), rồi cùng cả hệ thống làm [nghiệm thu](06-acceptance.md).

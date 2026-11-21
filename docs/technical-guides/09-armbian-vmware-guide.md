@@ -26,10 +26,10 @@ Tạo `WAN-Net`, `HQ-LAN-Net`, `Branch-LAN-Net` và gán NIC theo bảng. Đây 
 
 | Node | IP lab | Default gateway lab |
 | --- | --- | --- |
-| HQ-GW | WAN `172.16.1.10/24`, LAN `192.168.10.1/24` | Không có trên WAN giả lập |
-| Branch-GW | WAN `172.16.1.20/24`, LAN `192.168.20.1/24` | Không có trên WAN giả lập |
-| HQ-Server | `192.168.10.50/24` | `192.168.10.1` |
-| Branch-PC GUI | `192.168.20.50/24` | `192.168.20.1` |
+| HQ-GW | WAN `172.16.1.10/24`, LAN `10.74.10.1/24` | Không có trên WAN giả lập |
+| Branch-GW | WAN `172.16.1.20/24`, LAN `10.74.20.1/24` | Không có trên WAN giả lập |
+| HQ-Server | `10.74.10.50/24` | `10.74.10.1` |
+| Branch-PC GUI | `10.74.20.50/24` | `10.74.20.1` |
 | Windows Remote-PC | `172.16.1.100/24` | Không có trên WAN giả lập |
 
 Thêm NIC NAT **tạm thời trên từng VM cần tải gói**. Giữ tới khi deploy xong, sau đó ngắt kết nối NIC NAT trước demo. Giữ nguyên MAC/vị trí NIC lab sau khi khai báo tên card. Không nối Windows vào LAN HQ/Branch; không nối Branch-PC trực tiếp vào HQ LAN.
@@ -112,6 +112,6 @@ Thực hiện các bước `deploy-all.sh hq-gw`, phân phối cert sang Branch,
 
 Trước deploy gateway, kiểm tra TUN (`ls -l /dev/net/tun`; nếu thiếu thì kiểm tra kernel/module tun) và các unit `openvpn-server@.service`, `openvpn-client@.service` sau khi cài OpenVPN. Nếu image không có các thành phần này, xử lý image/kernel/package trước khi kết luận tương thích.
 
-Branch-PC GUI có thể cài browser/open-vm-tools-desktop từ kho của đúng image khi còn Internet; mở Portal bằng browser hoặc `xdg-open http://192.168.10.50`. Phần GUI chỉ phục vụ trình diễn, không phải VPN client S2S.
+Branch-PC GUI có thể cài browser/open-vm-tools-desktop từ kho của đúng image khi còn Internet; mở Portal bằng browser hoặc `xdg-open http://10.74.10.50`. Phần GUI chỉ phục vụ trình diễn, không phải VPN client S2S.
 
 Ngắt NAT tạm, kiểm tra lại route rồi dùng [kịch bản 6–8 phút](../presentation/demo-script.md): Windows C2S, Branch-PC GUI S2S, capture WAN/LAN trên HQ-GW. Ghi [checklist](../../tests/openvpn-demo.md) và image/base/version thật trước khi đánh dấu PASS.

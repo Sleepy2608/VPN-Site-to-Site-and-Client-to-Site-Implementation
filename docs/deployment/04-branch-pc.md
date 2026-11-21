@@ -6,7 +6,7 @@ Branch-PC là máy người dùng trong LAN chi nhánh, dùng trình duyệt tru
 
 | Card trên Branch-PC đã kiểm tra | Nối VMware | Địa chỉ | Gateway |
 | --- | --- | --- | --- |
-| ens33 | Branch-LAN-Net | 192.168.20.50/24 | 192.168.20.1 |
+| ens33 | Branch-LAN-Net | 10.74.20.50/24 | 10.74.20.1 |
 | ens37 | NAT | DHCP tạm | Do DHCP cấp, chỉ để tải gói |
 
 Không nối Branch-PC trực tiếp với HQ-LAN-Net hoặc WAN-Net. Nếu máy này từng dùng làm Linux VPN client trong bài ba máy, dừng/tắt client cũ và kiểm tra không có tunnel/route VPN cũ làm sai đường đi.
@@ -31,15 +31,15 @@ network:
     ens33:
       dhcp4: false
       dhcp6: false
-      addresses: [192.168.20.50/24]
+      addresses: [10.74.20.50/24]
       routes:
         - to: default
-          via: 192.168.20.1
+          via: 10.74.20.1
           metric: 200
-        - to: 192.168.10.0/24
-          via: 192.168.20.1
+        - to: 10.74.10.0/24
+          via: 10.74.20.1
         - to: 10.9.0.0/24
-          via: 192.168.20.1
+          via: 10.74.20.1
     ens37:
       dhcp4: true
       dhcp6: false
@@ -56,10 +56,10 @@ sudo netplan generate
 sudo netplan try
 ip -br address
 ip route
-ping -c 3 -W 2 192.168.20.1
+ping -c 3 -W 2 10.74.20.1
 ```
 
-Kỳ vọng LAN có `.50`, ping được Branch-GW. Route cụ thể HQ-LAN phải qua `192.168.20.1`, kể cả khi NIC NAT còn hoạt động.
+Kỳ vọng LAN có `.50`, ping được Branch-GW. Route cụ thể HQ-LAN phải qua `10.74.20.1`, kể cả khi NIC NAT còn hoạt động.
 
 ## 3 Cài công cụ và kiểm tra trình duyệt
 
@@ -81,21 +81,21 @@ Sau khi Branch-GW đã handshake thành công, chạy:
 ```bash
 cd ~/vpn-lab
 sudo bash scripts/deploy-all.sh branch-pc
-ip route get 192.168.10.50
-ping -c 3 -W 2 192.168.10.50
+ip route get 10.74.10.50
+ping -c 3 -W 2 10.74.10.50
 bash scripts/verify-portal.sh
-curl --noproxy '*' --fail --connect-timeout 3 --max-time 6 http://192.168.10.50/api/identity
-xdg-open http://192.168.10.50
+curl --noproxy '*' --fail --connect-timeout 3 --max-time 6 http://10.74.10.50/api/identity
+xdg-open http://10.74.10.50
 ```
 
-Lệnh `deploy-all.sh branch-pc` cài công cụ rồi kiểm tra, không cài OpenVPN client trên máy này. Kỳ vọng route có `via 192.168.20.1` và `src 192.168.20.50`; web/API trả HTTP 200; API/Nginx thấy IP `192.168.20.50`. Trình duyệt dùng URL HTTP, không tự đổi sang HTTPS của một site khác.
+Lệnh `deploy-all.sh branch-pc` cài công cụ rồi kiểm tra, không cài OpenVPN client trên máy này. Kỳ vọng route có `via 10.74.20.1` và `src 10.74.20.50`; web/API trả HTTP 200; API/Nginx thấy IP `10.74.20.50`. Trình duyệt dùng URL HTTP, không tự đổi sang HTTPS của một site khác.
 
 Nếu trình duyệt báo lỗi nhưng curl hoạt động, kiểm tra proxy, cache và chế độ ép HTTPS của browser. Thêm ngoại lệ proxy cho subnet lab nếu đang dùng proxy; lệnh curl có `--noproxy '*'` để đo trực tiếp.
 
 ## 5 Tải tệp và đối chiếu dung lượng
 
 ```bash
-curl --noproxy '*' --fail --connect-timeout 3 --max-time 20 -o /tmp/vpn-benchmark.dat http://192.168.10.50/files/benchmark-payload-1mb.dat
+curl --noproxy '*' --fail --connect-timeout 3 --max-time 20 -o /tmp/vpn-benchmark.dat http://10.74.10.50/files/benchmark-payload-1mb.dat
 wc -c /tmp/vpn-benchmark.dat
 sha256sum /tmp/vpn-benchmark.dat
 ```
@@ -117,10 +117,10 @@ Sau đó sang **HQ-Server** chạy `bash scripts/verify-s2s.sh hq-server` để 
 
 | Triệu chứng | Kiểm tra |
 | --- | --- |
-| Không ping được 192.168.20.1 | LAN Segment, Connected, MAC, địa chỉ/mask Branch-PC và Branch-GW |
-| Route HQ đi NAT | Thiếu route 192.168.10.0/24 via 192.168.20.1, YAML/profile cũ chưa được áp dụng |
+| Không ping được 10.74.20.1 | LAN Segment, Connected, MAC, địa chỉ/mask Branch-PC và Branch-GW |
+| Route HQ đi NAT | Thiếu route 10.74.10.0/24 via 10.74.20.1, YAML/profile cũ chưa được áp dụng |
 | Gateway vào HQ được nhưng PC không được | Forwarding và rule LAN ↔ tunnel ở Branch, route trả về ở HQ-Server |
-| API thấy nguồn khác 192.168.20.50 | Kiểm tra route, proxy hoặc NAT S2S ngoài cấu hình; không coi IP hiển thị là bằng chứng mã hóa |
+| API thấy nguồn khác 10.74.20.50 | Kiểm tra route, proxy hoặc NAT S2S ngoài cấu hình; không coi IP hiển thị là bằng chứng mã hóa |
 | HQ không chủ động ping lại được | Route trả về, firewall đầu cuối đã bật, NIC/địa chỉ Branch; không tắt toàn bộ firewall để thay kiểm tra |
 
 Khi Windows cũng đã Connect, tiến hành [nghiệm thu sau khi ngắt NAT](06-acceptance.md).

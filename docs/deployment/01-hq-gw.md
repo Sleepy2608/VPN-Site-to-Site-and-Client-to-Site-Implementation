@@ -7,7 +7,7 @@ HQ-GW là gateway trụ sở, chạy CA/Easy-RSA, OpenVPN C2S cho Windows và Op
 | Card trên HQ-GW đã đối chiếu | Nối VMware | Địa chỉ | Chức năng |
 | --- | --- | --- | --- |
 | ens33 | WAN-Net | 172.16.1.10/24 | Nhận UDP 1194 từ Windows và UDP 1195 từ Branch |
-| ens37 | HQ-LAN-Net | 192.168.10.1/24 | Gateway của HQ-Server |
+| ens37 | HQ-LAN-Net | 10.74.10.1/24 | Gateway của HQ-Server |
 | ens38 | NAT | DHCP tạm, hiện nhận 192.168.27.141/24 | Cài gói trước nghiệm thu |
 | tun0 | OpenVPN tự tạo | 10.8.0.1/24 | Đầu server C2S |
 | tun1 | OpenVPN tự tạo | 10.9.0.1/24 | Đầu server S2S |
@@ -39,7 +39,7 @@ network:
     ens37:
       dhcp4: false
       dhcp6: false
-      addresses: [192.168.10.1/24]
+      addresses: [10.74.10.1/24]
     ens38:
       dhcp4: true
       dhcp6: false
@@ -57,7 +57,7 @@ ip -br address
 ip route
 ```
 
-Kỳ vọng ens33 có `172.16.1.10/24`, ens37 có `192.168.10.1/24`, ens38 vẫn nhận DHCP trong mạng NAT. Default route tạm phải có `dev ens38`; không đặt default gateway cho WAN-Net hoặc HQ LAN của gateway. Nếu IP chưa đúng hoặc generate/try báo lỗi, giữ console và kiểm tra `nmcli -f NAME,UUID,TYPE,DEVICE connection show` để xác định profile cũ còn quản lý card; không tắt profile NAT theo phỏng đoán.
+Kỳ vọng ens33 có `172.16.1.10/24`, ens37 có `10.74.10.1/24`, ens38 vẫn nhận DHCP trong mạng NAT. Default route tạm phải có `dev ens38`; không đặt default gateway cho WAN-Net hoặc HQ LAN của gateway. Nếu IP chưa đúng hoặc generate/try báo lỗi, giữ console và kiểm tra `nmcli -f NAME,UUID,TYPE,DEVICE connection show` để xác định profile cũ còn quản lý card; không tắt profile NAT theo phỏng đoán.
 
 ## 3 Cài gói và khai báo NIC cho script
 
@@ -84,7 +84,7 @@ Khi Branch-GW và HQ-Server đã đặt IP, thử:
 
 ```bash
 ping -c 3 -W 2 172.16.1.20
-ping -c 3 -W 2 192.168.10.50
+ping -c 3 -W 2 10.74.10.50
 ```
 
 Chưa có VPN thì HQ-GW chưa cần liên lạc được Branch-PC. Hoàn tất mạng/gói trên các máy khác trước khi chuyển sang lượt triển khai dịch vụ trong [bảng thứ tự](README.md).
@@ -111,7 +111,7 @@ Lệnh còn chạy apt nên NIC NAT phải đang Connected. Lần đầu sinh kh
 | Trạng thái C2S | /var/log/openvpn/openvpn-c2s-status.log |
 | Trạng thái S2S | /var/log/openvpn/openvpn-s2s-status.log |
 
-C2S đẩy route HQ-LAN cho Windows và NAT nguồn VPN sang `192.168.10.1` khi đi vào HQ LAN. S2S dùng route kernel và CCD/iroute tới Branch LAN, giữ IP LAN nguồn. Server S2S chỉ nhận chứng chỉ `branch-gw`; C2S mặc định nhận `client1` qua CCD allowlist.
+C2S đẩy route HQ-LAN cho Windows và NAT nguồn VPN sang `10.74.10.1` khi đi vào HQ LAN. S2S dùng route kernel và CCD/iroute tới Branch LAN, giữ IP LAN nguồn. Server S2S chỉ nhận chứng chỉ `branch-gw`; C2S mặc định nhận `client1` qua CCD allowlist.
 
 ## 5 Kiểm tra server đã khởi động
 

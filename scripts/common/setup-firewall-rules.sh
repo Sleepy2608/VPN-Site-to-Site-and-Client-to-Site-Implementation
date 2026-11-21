@@ -14,10 +14,10 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "${SCRIPT_DIR}/lab-network.sh"
 check_gateway_interfaces
 if [[ "${ROLE}" == hq-gw ]]; then
-    LOCAL_NET=192.168.10.0/24; REMOTE_NET=192.168.20.0/24
+    LOCAL_NET=10.74.10.0/24; REMOTE_NET=10.74.20.0/24
     LOCAL_WAN=172.16.1.10; PEER_WAN=172.16.1.20; S2S_IF=tun1
 else
-    LOCAL_NET=192.168.20.0/24; REMOTE_NET=192.168.10.0/24
+    LOCAL_NET=10.74.20.0/24; REMOTE_NET=10.74.10.0/24
     LOCAL_WAN=172.16.1.20; PEER_WAN=172.16.1.10; S2S_IF=tun0
 fi
 ensure_rule() {
@@ -56,7 +56,7 @@ else
 fi
 iptables -w -A VPN_LAB_FORWARD -j DROP
 # Reject direct WAN routes to LAN/tunnel addresses, even for old tracked flows.
-for net in 192.168.10.0/24 192.168.20.0/24 10.8.0.0/24 10.9.0.0/24; do
+for net in 10.74.10.0/24 10.74.20.0/24 10.8.0.0/24 10.9.0.0/24; do
     iptables -w -A VPN_LAB_WAN_IN -s "${net}" -j DROP
     iptables -w -A VPN_LAB_WAN_IN -d "${net}" -j DROP
     iptables -w -A VPN_LAB_WAN_OUT -d "${net}" -j DROP

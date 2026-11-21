@@ -60,6 +60,19 @@ Nếu HQ được triển khai bằng root trực tiếp hoặc `CA_DIR`/đườ
 
 ## 5 Import và kết nối
 
+### Cấu hình lại bằng PowerShell
+
+Sau khi cài OpenVPN Community, chép `setup-c2s-windows.ps1` và `client1.ovpn` vào Windows VM. Chạy dưới tài khoản sẽ dùng OpenVPN GUI. Script kiểm tra máy chủ/cổng và các phần chứng chỉ inline, rồi cài hoặc cập nhật profile `client1` trong thư mục cấu hình của tài khoản. Nếu GUI đang chạy, mở lại menu ở system tray để nó đọc profile. [Tài liệu OpenVPN GUI](https://github.com/OpenVPN/openvpn-gui#using-openvpn-gui)
+
+```powershell
+Set-Location "$env:USERPROFILE\Downloads"
+powershell -NoProfile -File .\setup-c2s-windows.ps1 -ProfilePath .\client1.ovpn
+```
+
+Nếu cần đặt lại IP WAN, mở PowerShell với quyền quản trị trong cùng tài khoản. Dùng `Get-NetAdapter` để lấy tên NIC nối **WAN-Net** rồi thêm `-WanAdapterAlias 'tên card WAN'`. Script đặt `172.16.1.100/24` trên card được chỉ định và kiểm tra card đó không có default gateway. Kết nối lại `client1` sau khi cập nhật profile.
+
+### Import thủ công
+
 1. Nhấn phải biểu tượng OpenVPN GUI → **Import file...** → chọn `Downloads\client1.ovpn`.
 2. Chọn profile `client1` → **Connect**.
 3. Mở View Log, đợi `Initialization Sequence Completed` và trạng thái Connected.
@@ -74,17 +87,17 @@ Trong PowerShell:
 ipconfig
 route print -4
 Get-NetIPAddress -AddressFamily IPv4 | Where-Object { $_.IPAddress -like '10.8.0.*' }
-Get-NetRoute -AddressFamily IPv4 -DestinationPrefix 192.168.10.0/24
+Get-NetRoute -AddressFamily IPv4 -DestinationPrefix 10.74.10.0/24
 ping -n 3 10.8.0.1
-ping -n 3 192.168.10.50
-Test-NetConnection 192.168.10.50 -Port 80
-curl.exe --noproxy '*' --fail --connect-timeout 3 --max-time 6 http://192.168.10.50/api/identity
-Start-Process 'http://192.168.10.50'
+ping -n 3 10.74.10.50
+Test-NetConnection 10.74.10.50 -Port 80
+curl.exe --noproxy '*' --fail --connect-timeout 3 --max-time 6 http://10.74.10.50/api/identity
+Start-Process 'http://10.74.10.50'
 ```
 
 Kỳ vọng có IP VPN **10.8.0.x**, route HQ-LAN qua adapter VPN, TCP80/HTTP thành công. Không bắt buộc IP phải là `.2` hoặc adapter phải có tên TAP/Wintun. Profile là split tunnel vào HQ LAN, không cấp Internet qua VPN.
 
-Portal có thể thấy **`192.168.10.1`** do NAT C2S tại HQ-GW; điều này phù hợp cấu hình. IP client thật xem ở `ipconfig`/Get-NetIPAddress và status/log OpenVPN. Portal không tự chứng minh danh tính nhân viên hay cipher.
+Portal có thể thấy **`10.74.10.1`** do NAT C2S tại HQ-GW; điều này phù hợp cấu hình. IP client thật xem ở `ipconfig`/Get-NetIPAddress và status/log OpenVPN. Portal không tự chứng minh danh tính nhân viên hay cipher.
 
 Trên **HQ-GW**, sau khi Windows đã Connect và chờ khoảng 5 giây, người quản trị chạy:
 
@@ -102,7 +115,7 @@ Tải file trong PowerShell:
 
 ```powershell
 $payloadPath = Join-Path $env:TEMP 'vpn-benchmark.dat'
-curl.exe --noproxy '*' --fail --connect-timeout 3 --max-time 20 -o "$payloadPath" http://192.168.10.50/files/benchmark-payload-1mb.dat
+curl.exe --noproxy '*' --fail --connect-timeout 3 --max-time 20 -o "$payloadPath" http://10.74.10.50/files/benchmark-payload-1mb.dat
 if ($LASTEXITCODE -eq 0) {
     Get-Item -LiteralPath $payloadPath | Select-Object Name, Length
     Get-FileHash -LiteralPath $payloadPath -Algorithm SHA256
@@ -112,7 +125,7 @@ if ($LASTEXITCODE -eq 0) {
 Đúng 1.048.576 byte và hash trùng HQ-Server. Sau khi hoàn tất deploy trên mọi máy, ngắt NIC NAT tạm, thử lại HTTP khi đang Connect. Chọn `client1 → Disconnect`, dùng request mới:
 
 ```powershell
-curl.exe --noproxy '*' --connect-timeout 2 --max-time 4 http://192.168.10.50/
+curl.exe --noproxy '*' --connect-timeout 2 --max-time 4 http://10.74.10.50/
 route print -4
 ```
 

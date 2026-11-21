@@ -4,6 +4,8 @@
 
 Nếu bắt đầu từ VM mới, làm theo [kịch bản chi tiết theo từng máy](detailed-lab-runbook.md) trước. Tài liệu dưới là bản trình diễn rút gọn sau khi triển khai và nghiệm thu xong.
 
+Lab VMware đã triển khai đang dùng IPsec cho S2S. Trước khi chạy kịch bản OpenVPN S2S dưới đây, chuyển cả HQ-GW và Branch-GW sang mode `openvpn` theo [hướng dẫn chuyển mode](../technical-guides/06-ipsec-strongswan-guide.md#triển-khai-và-chuyển-mode-trên-cả-hai-gateway).
+
 Demo trên **VMware** dùng **3 Armbian không GUI + 1 Armbian GUI (Branch-PC) + 1 Windows Remote-PC**, chỉ dùng **OpenVPN cho C2S và S2S**. Hoàn tất [triển khai](../../README.md) và [chuẩn bị Armbian/VMware](../technical-guides/09-armbian-vmware-guide.md) trước buổi trình diễn. Windows dùng OpenVPN GUI; xem [yêu cầu Windows](../technical-guides/08-windows-client-requirements.md).
 
 ## Chuẩn bị trước giờ demo
@@ -25,7 +27,7 @@ Trên Windows Remote-PC trước khi bắt đầu: chọn `client1` → **Discon
 
 ```powershell
 ping -n 2 172.16.1.10
-Invoke-WebRequest -UseBasicParsing -Method Head -Uri http://192.168.10.50 -TimeoutSec 3
+Invoke-WebRequest -UseBasicParsing -Method Head -Uri http://10.74.10.50 -TimeoutSec 3
 ```
 
 Ping WAN phải được; lệnh HTTP tới HQ dự kiến báo timeout/lỗi khi C2S tắt trong mô hình cô lập. Nếu HTTP đã thành công thì kiểm tra lại adapter, route và proxy trước demo. Kết quả này không thay thế kiểm thử chính sách firewall.
@@ -41,15 +43,15 @@ Trong **PowerShell Windows**:
 ```powershell
 ipconfig
 route print -4
-ping -n 3 192.168.10.50
-Test-NetConnection 192.168.10.50 -Port 80
-Invoke-WebRequest -UseBasicParsing -Method Head -Uri http://192.168.10.50 -TimeoutSec 5
-Start-Process http://192.168.10.50
+ping -n 3 10.74.10.50
+Test-NetConnection 10.74.10.50 -Port 80
+Invoke-WebRequest -UseBasicParsing -Method Head -Uri http://10.74.10.50 -TimeoutSec 5
+Start-Process http://10.74.10.50
 ```
 
-Chỉ ra IP tunnel `10.8.0.x`, route HQ `192.168.10.0/24` qua adapter OpenVPN, ping có phản hồi và HTTP 200. Tải một tài liệu trong trình duyệt. Tên adapter tùy driver, không bắt buộc TAP/Wintun; dùng driver đi kèm bộ cài hiện hành.
+Chỉ ra IP tunnel `10.8.0.x`, route HQ `10.74.10.0/24` qua adapter OpenVPN, ping có phản hồi và HTTP 200. Tải một tài liệu trong trình duyệt. Tên adapter tùy driver, không bắt buộc TAP/Wintun; dùng driver đi kèm bộ cài hiện hành.
 
-C2S đang NAT ra LAN HQ: Portal có thể thấy `192.168.10.1`. IP VPN thực tế xem bằng `ipconfig` trên Windows; IP trên Portal không xác nhận cipher hoặc trạng thái VPN. Có thể dùng `quick-setup.bat` làm menu hỗ trợ.
+C2S đang NAT ra LAN HQ: Portal có thể thấy `10.74.10.1`. IP VPN thực tế xem bằng `ipconfig` trên Windows; IP trên Portal không xác nhận cipher hoặc trạng thái VPN. Có thể dùng `quick-setup.bat` làm menu hỗ trợ.
 
 ## Phần 2 — Chi nhánh truy cập HQ (2 phút)
 
@@ -58,10 +60,10 @@ Lời dẫn: “Máy Branch-PC không cài VPN client. Hai gateway OpenVPN đị
 Trên Branch-PC:
 
 ```bash
-ping -c 3 -W 2 192.168.10.50
-curl --noproxy '*' --connect-timeout 3 --max-time 10 -I http://192.168.10.50
-traceroute -n -w 1 -m 5 192.168.10.50
-xdg-open http://192.168.10.50
+ping -c 3 -W 2 10.74.10.50
+curl --noproxy '*' --connect-timeout 3 --max-time 10 -I http://10.74.10.50
+traceroute -n -w 1 -m 5 10.74.10.50
+xdg-open http://10.74.10.50
 ```
 
 Browser trên **Armbian GUI Branch-PC** mở cùng Portal để chứng minh truy cập ứng dụng qua S2S; máy này không cài VPN client. Nếu chưa có browser mặc định, chuẩn bị browser của đúng image từ trước hoặc mở URL thủ công trong browser đã cài.
@@ -92,7 +94,7 @@ sudo bash scripts/capture-traffic.sh -i "$LAN_IF" -m lan-http -c 20 -o demo-http
 Sau khi tcpdump báo đang lắng nghe, từ Branch-PC tạo lưu lượng:
 
 ```bash
-curl --noproxy '*' --connect-timeout 3 --max-time 20 -o /dev/null http://192.168.10.50/files/benchmark-payload-1mb.dat
+curl --noproxy '*' --connect-timeout 3 --max-time 20 -o /dev/null http://10.74.10.50/files/benchmark-payload-1mb.dat
 ```
 
 Nếu chưa đủ 20 gói thì tải lại file hoặc nhấn Ctrl+C để kết thúc capture. Chép pcap từ `tests/captures/samples/` trên HQ-GW về Windows qua Shared Folder/WinSCP; Wireshark cần cài trước khi tắt NAT. Chỉ mở pcap thì không cần bắt gói trực tiếp trên Windows.
@@ -115,7 +117,7 @@ Trên Windows chọn OpenVPN GUI → `client1` → **Disconnect**. Trong PowerSh
 
 ```powershell
 route print -4
-Invoke-WebRequest -UseBasicParsing -Method Head -Uri http://192.168.10.50 -TimeoutSec 3
+Invoke-WebRequest -UseBasicParsing -Method Head -Uri http://10.74.10.50 -TimeoutSec 3
 ```
 
 Route HQ do OpenVPN đẩy vào phải bị gỡ; trong mô hình cô lập chuẩn, HTTP không truy cập được HQ khi C2S tắt. OpenVPN S2S giữa hai gateway vẫn chạy độc lập. Dùng **Connect** lại để demo lần nữa.

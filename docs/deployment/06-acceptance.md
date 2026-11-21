@@ -15,9 +15,9 @@ Trên bốn Linux xem `ip -br address` và `ip route`. Kiểm tra route tới si
 | HQ-GW | systemctl is-active openvpn-server@server-c2s openvpn-server@server-s2s | Hai service active |
 | HQ-GW | ip -br address show tun0; ip -br address show tun1 | 10.8.0.1 và 10.9.0.1 |
 | Branch-GW | systemctl is-active openvpn-client@client-s2s | Active và log handshake hoàn tất |
-| Branch-GW | ip route get 192.168.10.50 | dev tun0 |
+| Branch-GW | ip route get 10.74.10.50 | dev tun0 |
 | HQ-Server | systemctl is-active nginx | Active; HTTP cục bộ 200 |
-| Branch-PC | ip route get 192.168.10.50 | via 192.168.20.1, src 192.168.20.50 |
+| Branch-PC | ip route get 10.74.10.50 | via 10.74.20.1, src 10.74.20.50 |
 | Windows | ipconfig, route print -4 sau Connect | IP 10.8.0.x và route HQ qua VPN |
 
 ## 3 Kiểm tra luồng thực tế
@@ -57,9 +57,9 @@ bash scripts/verify-s2s.sh hq-server
 **Windows Remote-PC trong PowerShell:**
 
 ```powershell
-ping -n 3 192.168.10.50
-curl.exe --noproxy '*' --fail --connect-timeout 3 --max-time 6 http://192.168.10.50/api/identity
-Start-Process 'http://192.168.10.50'
+ping -n 3 10.74.10.50
+curl.exe --noproxy '*' --fail --connect-timeout 3 --max-time 6 http://10.74.10.50/api/identity
+Start-Process 'http://10.74.10.50'
 ```
 
 Cần có hai chiều khởi tạo giữa host LAN, HTTP từ Branch-PC và Windows. Sau đó ngắt Windows: HTTP mới từ Windows phải lỗi, trong khi Branch-PC vẫn dùng Portal được. Kết nối lại Windows trước khi làm phần capture C2S.
@@ -87,7 +87,7 @@ sudo bash scripts/capture-traffic.sh -i "$LAN_IF" -m lan-http -c 0 -d 20 -o five
 Đợi cả hai báo listening, rồi trong 20 giây đó, chạy tại **Branch-PC**:
 
 ```bash
-curl --noproxy '*' --fail --connect-timeout 3 --max-time 10 -o /tmp/vpn-benchmark.dat http://192.168.10.50/files/benchmark-payload-1mb.dat
+curl --noproxy '*' --fail --connect-timeout 3 --max-time 10 -o /tmp/vpn-benchmark.dat http://10.74.10.50/files/benchmark-payload-1mb.dat
 ```
 
 Đọc tại HQ-GW:
