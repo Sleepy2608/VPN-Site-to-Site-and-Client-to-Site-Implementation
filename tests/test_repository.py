@@ -14,9 +14,11 @@ import time
 import unittest
 
 ROOT = Path(__file__).resolve().parents[1]
-BASH = os.environ.get("BASH_BIN") or shutil.which("bash")
+BASH = os.environ.get("BASH_BIN")
 if not BASH and Path("C:/Program Files/Git/bin/bash.exe").exists():
     BASH = "C:/Program Files/Git/bin/bash.exe"
+if not BASH:
+    BASH = shutil.which("bash")
 
 
 def shell(code, *args):
